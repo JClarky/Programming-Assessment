@@ -1,4 +1,5 @@
 from tkinter import *
+from PIL import Image, ImageTk
 
 #
 # Managers
@@ -9,6 +10,8 @@ class GameManager():
     def __init__(self):
         self.run = True
         self.root = Tk()
+        self.height = 600
+        self.width = 1000
         self.root.title("EzSoil Game")
         self.root.geometry("1000x600")
         self.root.resizable(False, False)
@@ -34,7 +37,7 @@ class frameManager():
             widgets.destroy()
 
 #
-# Subclasses
+# Manager subclasses
 #
 
 # Frame sub class
@@ -59,11 +62,22 @@ class menu():
     def show(self):
         self.frame_manager.clear()
         self.frame.configure(background='white')
-        self.frame_manager.game_manager.root.title("menu")
-        navbar(self, self.frame)
-        navbar(self, self.frame)
-        navbar(self, self.frame)
+        self.frame_manager.game_manager.root.title("Main Menu")
 
+        image1 = Image.open("assets/logo.png")
+        pixels_x, pixels_y = tuple([int(0.5 * x)  for x in image1.size])
+        image1 = image1.resize((pixels_x, pixels_y))
+        logo = ImageTk.PhotoImage(image1)
+        label = Label(self.frame, image=logo, background="white")
+        label.image=logo 
+        label.pack()
+
+        Button(self.frame, text="Play", command=lambda: self.frame_manager.bathroom.show()).pack()
+        Button(self.frame, text="Instructions", command=lambda: print("show intructions")).pack()
+        Button(self.frame, text="Exit", command=lambda: self.frame_manager.game_manager.root.destroy()).pack()
+
+        copyright = Label(self.frame, text="Copyright EzSoil 2022", background="white")
+        copyright.place(x = 20, y = self.frame_manager.game_manager.height-20, anchor = 'sw')
 
 #
 # Widgets
