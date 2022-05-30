@@ -64,17 +64,20 @@ class menu():
         self.frame.configure(background='white')
         self.frame_manager.game_manager.root.title("Main Menu")
 
+        container = Frame(self.frame, background = "white")
+        container.place(anchor="center", relx=0.5, rely=0.7, height=500, width=800)
+
         image1 = Image.open("assets/logo.png")
-        pixels_x, pixels_y = tuple([int(0.5 * x)  for x in image1.size])
+        pixels_x, pixels_y = tuple([int(0.4 * x)  for x in image1.size])
         image1 = image1.resize((pixels_x, pixels_y))
         logo = ImageTk.PhotoImage(image1)
-        label = Label(self.frame, image=logo, background="white")
+        label = Label(container, image=logo, background="white")
         label.image=logo 
         label.pack()
 
-        Button(self.frame, text="Play", command=lambda: self.frame_manager.bathroom.show()).pack()
-        Button(self.frame, text="Instructions", command=lambda: print("show intructions")).pack()
-        Button(self.frame, text="Exit", command=lambda: self.frame_manager.game_manager.root.destroy()).pack()
+        Button(container, text="Play", command=lambda: self.frame_manager.bathroom.show()).pack()
+        Button(container, text="Instructions", command=lambda: print("show intructions")).pack()
+        Button(container, text="Exit", command=lambda: self.frame_manager.game_manager.root.destroy()).pack()
 
         copyright = Label(self.frame, text="Copyright EzSoil 2022", background="white")
         copyright.place(x = 20, y = self.frame_manager.game_manager.height-20, anchor = 'sw')
