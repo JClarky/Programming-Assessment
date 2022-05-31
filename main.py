@@ -50,7 +50,16 @@ class bathroom():
         self.frame_manager.clear()
         self.frame.configure(background='white')
         self.frame_manager.game_manager.root.title("bathroom")
+        canvas = Canvas(self.frame, width=self.frame_manager.game_manager.width, height=self.frame_manager.game_manager.height)
+        canvas.pack()
+
+        img = ImageTk.PhotoImage(Image.open('assets/bathroom.jpg').resize((self.frame_manager.game_manager.width, self.frame_manager.game_manager.height), Image.ANTIALIAS))
+        canvas.background = img  # Keep a reference in case this code is put in a function.
+        bg = canvas.create_image(0, 0, anchor=NW, image=img)
         navbar(self, self.frame)
+
+        
+
 
 
 # Frame sub class
@@ -91,8 +100,12 @@ class navbar():
     def __init__(self, parent_frame, frame):
         self.parent_frame = parent_frame
         self.frame = frame
+        
+        container = Frame(self.frame, background = "white")
+        container.place(anchor="n")
+
         Button(self.frame, text ="Bathroom", command = self.bathroom_button).pack()
-        Button(self.frame, text ="Menu", command = self.menu_button).pack()
+        Button(self.frame, text ="Menu", command = self.menu_button).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width, y=15)
 
     def bathroom_button(self):
         self.parent_frame.frame_manager.bathroom.show()
