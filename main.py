@@ -1,5 +1,7 @@
 from tkinter import *
 from PIL import Image, ImageTk
+from threading import Thread
+import time
 
 #
 # Managers
@@ -10,6 +12,7 @@ class GameManager():
     def __init__(self):
         self.run = True
         self.root = Tk()
+        self.time = 700
         self.height = 600
         self.width = 1000
         self.root.title("EzSoil Game")
@@ -20,10 +23,23 @@ class GameManager():
         frame_manager = frameManager(self)
         plantManager().spawn(frame_manager.bathroom)
         print("TICKERRR NEEDS TO BE HAPPENING ONCE A SECOND")
+        Thread(target=self.clock).start()
         self.main_loop()
-       
+
+    def destroy(self):
+        self.run = False
+        self.root.destroy()
+
     def main_loop(self):
         self.root.mainloop()
+
+    def clock(self):   
+        while self.run:     
+            self.time += 1
+            print(self.time)
+            time.sleep(1)
+       
+        
 
 # Frame manager
 class frameManager():
@@ -40,9 +56,12 @@ class frameManager():
             
 class plantManager():
     def __init__(self):
-        print("ahh yes")
+        print("ahhhh yes")
     def spawn(self, environment=None):
-        print("spawning plant in random location, unless otherwise requested")
+        if environment is None:
+            print("choosing random environment")
+        print("spawning plant")
+        plant(environment)
 
 #
 # Manager subclasses
@@ -98,7 +117,7 @@ class menu():
 
         Button(container, text="Play", command=lambda: self.frame_manager.bathroom.show()).pack()
         Button(container, text="Instructions", command=lambda: plantManager()).pack()
-        Button(container, text="Exit", command=lambda: self.frame_manager.game_manager.root.destroy()).pack()
+        Button(container, text="Exit", command=lambda: self.frame_manager.game_manager.destroy()).pack()
 
         copyright = Label(self.frame, text="Copyright EzSoil 2022", background="white")
         copyright.place(x = 20, y = self.frame_manager.game_manager.height-20, anchor = 'sw')
@@ -121,6 +140,7 @@ class navbar():
 
     def bathroom_button(self):
         self.parent_frame.frame_manager.bathroom.show()
+        self.parent_frame.frame_manager.game_manager.clock()
 
     def menu_button(self):
         self.parent_frame.frame_manager.menu.show()
