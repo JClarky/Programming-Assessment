@@ -1,7 +1,7 @@
 from tkinter import *
 from PIL import Image, ImageTk
 from threading import Thread
-import time
+import time, random
 
 #
 # Managers
@@ -18,17 +18,27 @@ class GameManager():
         self.root.title("EzSoil Game")
         self.root.geometry("1000x600")
         self.root.resizable(False, False)
+        self.root.protocol("WM_DELETE_WINDOW", self.destroy)
         self.frame = Frame(self.root)
         self.frame.pack(side="top", expand=True, fill="both")
-        frame_manager = frameManager(self)
-        plantManager().spawn(frame_manager.bathroom)
-        print("TICKERRR NEEDS TO BE HAPPENING ONCE A SECOND")
-        Thread(target=self.clock).start()
+        self.frame_manager = frameManager(self)      
+        plantManager(self).spawn(self.frame_manager.bathroom)
+        self.root.bind('<Motion>', self.motion)
         self.main_loop()
+
+    def motion(self,event):
+        x, y = event.x, event.y
+        print('{}, {}'.format(x, y))
+
+
 
     def destroy(self):
         self.run = False
         self.root.destroy()
+
+    def start(self):
+        Thread(target=self.clock).start()
+        self.frame_manager.bathroom.show()
 
     def main_loop(self):
         self.root.mainloop()
@@ -39,15 +49,12 @@ class GameManager():
             print(self.time)
             time.sleep(1)
        
-        
-
 # Frame manager
 class frameManager():
     def __init__(self, game_manager):
         self.game_manager = game_manager
         self.menu = menu(self)
         self.bathroom = bathroom(self)
-
         self.menu.show()
 
     def clear(self):
@@ -55,12 +62,12 @@ class frameManager():
             widgets.destroy()
             
 class plantManager():
-    def __init__(self):
-        print("ahhhh yes")
+    def __init__(self, game_manager):
+        self.game_manager = game_manager
     def spawn(self, environment=None):
+        enviros = [self.game_manager.frame_manager.bathroom]
         if environment is None:
-            print("choosing random environment")
-        print("spawning plant")
+            environment = random.choice(enviros)
         plant(environment)
 
 #
@@ -69,8 +76,26 @@ class plantManager():
 
 class plant():
     def __init__(self, environment):
+        plants = [{"name": "plant1", "image": "Plant-image.webp"}, 
+            {"name": "plant2", "image": "Plant-image.webp"}, 
+            {"name": "plant3", "image": "Plant-image.webp"}]
+
+        self.environment = environment
+
         print("choosing type of plant (from database) and spawning at requested environment")
-        
+        self.info = random.choice(plants)   
+        self.name = self.info["name"]
+        self.environment.plants.append(self)
+
+    def draw(self):
+        self.canvas = Canvas(self.environment.frame_manager.game_manager.frame, width=100, height=100)
+
+        img = ImageTk.PhotoImage(Image.open('assets/'+self.info["image"]).resize((100, 100), Image.LANCZOS))
+        self.canvas.background = img 
+        bg = self.canvas.create_image(0, 0, anchor=NW, image=img)
+
+        self.canvas.place(anchor="e", x=280, y=400)
+
     def update(self):
         print("depending on the time elaspsed, update the plant conditiosns accordingly")
 
@@ -80,18 +105,23 @@ class bathroom():
         self.frame_manager = frame_manager
         self.frame = frame_manager.game_manager.frame
         self.plants = []
+        self.canvas = None
 
     def show(self):
         self.frame_manager.clear()
         self.frame.configure(background='white')
         self.frame_manager.game_manager.root.title("Bathroom")
-        canvas = Canvas(self.frame, width=self.frame_manager.game_manager.width, height=self.frame_manager.game_manager.height)
-        canvas.pack()
+        self.canvas = Canvas(self.frame, width=self.frame_manager.game_manager.width, height=self.frame_manager.game_manager.height)
+        self.canvas.pack()
 
-        img = ImageTk.PhotoImage(Image.open('assets/bathroom.jpg').resize((self.frame_manager.game_manager.width, self.frame_manager.game_manager.height), Image.ANTIALIAS))
-        canvas.background = img  # Keep a reference in case this code is put in a function.
-        bg = canvas.create_image(0, 0, anchor=NW, image=img)
+        img = ImageTk.PhotoImage(Image.open('assets/bathroom.jpg').resize((self.frame_manager.game_manager.width, self.frame_manager.game_manager.height), Image.LANCZOS))
+        self.canvas.background = img  # Keep a reference in case this code is put in a function.
+        bg = self.canvas.create_image(0, 0, anchor=NW, image=img)
         navbar(self, self.frame)
+
+        for plant in self.plants:
+            plant.draw()
+
 
 # Frame sub class
 class menu():
@@ -115,7 +145,7 @@ class menu():
         label.image=logo 
         label.pack()
 
-        Button(container, text="Play", command=lambda: self.frame_manager.bathroom.show()).pack()
+        Button(container, text="Play", command=lambda: self.frame_manager.game_manager.start()).pack()
         Button(container, text="Instructions", command=lambda: plantManager()).pack()
         Button(container, text="Exit", command=lambda: self.frame_manager.game_manager.destroy()).pack()
 
