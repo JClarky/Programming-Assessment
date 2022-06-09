@@ -23,14 +23,12 @@ class GameManager():
         self.frame.pack(side="top", expand=True, fill="both")
         self.frame_manager = frameManager(self)      
         plantManager(self).spawn(self.frame_manager.bathroom)
-        self.root.bind('<Motion>', self.motion)
+        #self.root.bind('<Motion>', self.motion)
         self.main_loop()
 
     def motion(self,event):
         x, y = event.x, event.y
         print('{}, {}'.format(x, y))
-
-
 
     def destroy(self):
         self.run = False
@@ -93,11 +91,36 @@ class plant():
         img = ImageTk.PhotoImage(Image.open('assets/'+self.info["image"]).resize((100, 100), Image.LANCZOS))
         self.canvas.background = img 
         bg = self.canvas.create_image(0, 0, anchor=NW, image=img)
-
         self.canvas.place(anchor="e", x=280, y=400)
+        self.canvas.tag_bind(bg, '<ButtonPress-1>', self.clicked) 
+
+    def clicked(self, event):
+        print("clicked, display plant info")
+        self.canvas_plant_info = Canvas(self.environment.frame_manager.game_manager.frame, width=150, height=150)
+        self.canvas_plant_info.place(anchor="e", x=305, y=350)        
+        self.canvas_plant_info.create_rectangle(0,50,75,100, fill="white")
+        self.canvas_plant_info.create_rectangle(75,50,150,100, fill="white")
+        self.canvas_plant_info.create_rectangle(0,100,75,150, fill="white")
+        self.canvas_plant_info.create_rectangle(75,100,150,150, fill="white")
+        self.canvas_plant_info.create_text(5, 0, anchor=NW, text=self.info["name"])
+        self.canvas_plant_info.create_text(5, 50, anchor=NW, text="water")
+        self.canvas_plant_info.create_text(80, 50, anchor=NW, text="light")
+        self.canvas_plant_info.create_text(5, 100, anchor=NW, text="humidity")
+        self.canvas_plant_info.create_text(80, 100, anchor=NW, text="temperature")
+        Button(self.canvas_plant_info, text="X", command=self.close).place(x=135, y=0)
+
+        self.canvas_plant_info.create_text(5, 75, anchor=NW, text="30%")
+        self.canvas_plant_info.create_text(80, 75, anchor=NW, text="3 hours direct sunlight")
+        self.canvas_plant_info.create_text(5, 125, anchor=NW, text="20%")
+        self.canvas_plant_info.create_text(80, 125, anchor=NW, text="20°C")
+
+    def close(self):
+        self.canvas_plant_info.destroy()
 
     def update(self):
-        print("depending on the time elaspsed, update the plant conditiosns accordingly")
+        print("depending on the time elaspsed, update the plant conditions accordingly")
+
+    
 
 # Frame sub class
 class bathroom():
