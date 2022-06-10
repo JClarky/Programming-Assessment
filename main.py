@@ -22,7 +22,8 @@ class GameManager():
         self.frame = Frame(self.root)
         self.frame.pack(side="top", expand=True, fill="both")
         self.frame_manager = frameManager(self)      
-        plantManager(self).spawn(self.frame_manager.bathroom)
+        self.plant_manager = plantManager(self)
+        self.plant_manager.spawn(self.frame_manager.bathroom)
         #self.root.bind('<Motion>', self.motion)
         self.main_loop()
 
@@ -44,6 +45,7 @@ class GameManager():
     def clock(self):   
         while self.run:     
             self.time += 1
+
             colon_index = 1
             if self.time > 999: 
                 colon_index = 2
@@ -58,7 +60,10 @@ class GameManager():
                     pass
                 self.update_text = self.frame_manager.active_frame.canvas.create_text(10, 10, anchor=NW, text=time_formatted)
             except:
-                print("value")
+                pass
+
+
+            self.plant_manager.update()
         
             time.sleep(1)
        
@@ -77,24 +82,32 @@ class frameManager():
             
 class plantManager():
     def __init__(self, game_manager):
-        self.game_manager = game_manager
+        self.game_manager = game_manager 
+        self.enviros = [self.game_manager.frame_manager.bathroom]
+        self.plants = []
+
     def spawn(self, environment=None):
-        enviros = [self.game_manager.frame_manager.bathroom]
         if environment is None:
-            environment = random.choice(enviros)
-        plant(environment)
+            environment = random.choice(self.enviros)
+        plant(environment, self)
+    
+    def update(self):
+        for plant in self.plants:
+            plant.update()
 
 #
 # Manager subclasses
 #
 
 class plant():
-    def __init__(self, environment):
-        plants = [{"name": "plant1", "image": "Plant-image.webp"}, 
-            {"name": "plant2", "image": "Plant-image.webp"}, 
-            {"name": "plant3", "image": "Plant-image.webp"}]
+    def __init__(self, environment, plant_manager):
+        plants = [{"name": "plant1", "image": "Plant-image.webp", "moisture_rate": 0.2}, 
+            {"name": "plant2", "image": "Plant-image.webp", "moisture_rate": 0.2}, 
+            {"name": "plant3", "image": "Plant-image.webp", "moisture_rate": 0.1}]
 
         self.environment = environment
+        self.plant_manager = plant_manager
+        self.plant_manager.plants.append(self)
 
         print("choosing type of plant (from database) and spawning at requested environment")
         self.info = random.choice(plants)   
@@ -102,6 +115,8 @@ class plant():
         self.environment.plants.append(self)
         self.soil_moisture = random.randint(0, 30)
         self.sunlight_hours = 0
+        self.spawn_time = self.environment.frame_manager.game_manager.time
+        self.moisture_rate = self.info["moisture_rate"]
 
     def draw(self):
         self.canvas = Canvas(self.environment.frame_manager.game_manager.frame, width=100, height=100)
@@ -127,7 +142,7 @@ class plant():
         self.canvas_plant_info.create_text(105, 100, anchor=NW, text="Temperature")
         Button(self.canvas_plant_info, text="X", command=self.close).place(x=185, y=0)
 
-        self.canvas_plant_info.create_text(5, 75, anchor=NW, text=str(self.soil_moisture)+"%")
+        self.canvas_plant_info.create_text(5, 75, anchor=NW, text=str(round(self.soil_moisture))+"%")
         self.canvas_plant_info.create_text(105, 65, anchor=NW, text=str(self.sunlight_hours)+" hours \n" + str(self.environment.sunlight_intensity) + " sunlight")
         self.canvas_plant_info.create_text(5, 125, anchor=NW, text=str(self.environment.humidity)+"%")
         self.canvas_plant_info.create_text(105, 125, anchor=NW, text=str(self.environment.temperature)+"°C")
@@ -135,8 +150,8 @@ class plant():
     def close(self):
         self.canvas_plant_info.destroy()
 
-    def update(self):
-        print("depending on the time elaspsed, update the plant conditions accordingly")
+    def update(self):        
+        self.soil_moisture = self.soil_moisture - self.moisture_rate
 
     
 
@@ -150,6 +165,7 @@ class bathroom():
         self.temperature = random.randint(15,25)
         self.humidity = random.randint(70,95)
         self.sunlight_intensity = "indirect"
+        
 
     def show(self):
         self.frame_manager.clear()
