@@ -44,7 +44,22 @@ class GameManager():
     def clock(self):   
         while self.run:     
             self.time += 1
-            print(self.time)
+            colon_index = 1
+            if self.time > 999: 
+                colon_index = 2
+
+            time_formatted = str(self.time)
+            time_formatted = time_formatted[:colon_index]+":"+time_formatted[colon_index:]
+            
+            try:
+                try:
+                    self.frame_manager.active_frame.canvas.delete(self.update_text)
+                except:
+                    pass
+                self.update_text = self.frame_manager.active_frame.canvas.create_text(10, 10, anchor=NW, text=time_formatted)
+            except:
+                print("value")
+        
             time.sleep(1)
        
 # Frame manager
@@ -54,6 +69,7 @@ class frameManager():
         self.menu = menu(self)
         self.bathroom = bathroom(self)
         self.menu.show()
+        self.active_frame = None;
 
     def clear(self):
         for widgets in self.game_manager.frame.winfo_children():
@@ -137,10 +153,13 @@ class bathroom():
 
     def show(self):
         self.frame_manager.clear()
+        self.frame_manager.active_frame = self
         self.frame.configure(background='white')
         self.frame_manager.game_manager.root.title("Bathroom")
         self.canvas = Canvas(self.frame, width=self.frame_manager.game_manager.width, height=self.frame_manager.game_manager.height)
         self.canvas.pack()
+
+        
 
         img = ImageTk.PhotoImage(Image.open('assets/bathroom.jpg').resize((self.frame_manager.game_manager.width, self.frame_manager.game_manager.height), Image.LANCZOS))
         self.canvas.background = img  # Keep a reference in case this code is put in a function.
