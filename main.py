@@ -84,6 +84,8 @@ class plant():
         self.info = random.choice(plants)   
         self.name = self.info["name"]
         self.environment.plants.append(self)
+        self.soil_moisture = random.randint(0, 30)
+        self.sunlight_hours = 0
 
     def draw(self):
         self.canvas = Canvas(self.environment.frame_manager.game_manager.frame, width=100, height=100)
@@ -96,23 +98,23 @@ class plant():
 
     def clicked(self, event):
         print("clicked, display plant info")
-        self.canvas_plant_info = Canvas(self.environment.frame_manager.game_manager.frame, width=150, height=150)
+        self.canvas_plant_info = Canvas(self.environment.frame_manager.game_manager.frame, width=200, height=150)
         self.canvas_plant_info.place(anchor="e", x=305, y=350)        
-        self.canvas_plant_info.create_rectangle(0,50,75,100, fill="white")
-        self.canvas_plant_info.create_rectangle(75,50,150,100, fill="white")
-        self.canvas_plant_info.create_rectangle(0,100,75,150, fill="white")
-        self.canvas_plant_info.create_rectangle(75,100,150,150, fill="white")
+        self.canvas_plant_info.create_rectangle(0,50,100,100, fill="white")
+        self.canvas_plant_info.create_rectangle(100,50,200,100, fill="white")
+        self.canvas_plant_info.create_rectangle(0,100,100,150, fill="white")
+        self.canvas_plant_info.create_rectangle(100,100,200,150, fill="white")
         self.canvas_plant_info.create_text(5, 0, anchor=NW, text=self.info["name"])
-        self.canvas_plant_info.create_text(5, 50, anchor=NW, text="water")
-        self.canvas_plant_info.create_text(80, 50, anchor=NW, text="light")
-        self.canvas_plant_info.create_text(5, 100, anchor=NW, text="humidity")
-        self.canvas_plant_info.create_text(80, 100, anchor=NW, text="temperature")
-        Button(self.canvas_plant_info, text="X", command=self.close).place(x=135, y=0)
+        self.canvas_plant_info.create_text(5, 50, anchor=NW, text="Soil Moisture")
+        self.canvas_plant_info.create_text(105, 50, anchor=NW, text="Sunlight")
+        self.canvas_plant_info.create_text(5, 100, anchor=NW, text="Humidity")
+        self.canvas_plant_info.create_text(105, 100, anchor=NW, text="Temperature")
+        Button(self.canvas_plant_info, text="X", command=self.close).place(x=185, y=0)
 
-        self.canvas_plant_info.create_text(5, 75, anchor=NW, text="30%")
-        self.canvas_plant_info.create_text(80, 75, anchor=NW, text="3 hours direct sunlight")
-        self.canvas_plant_info.create_text(5, 125, anchor=NW, text="20%")
-        self.canvas_plant_info.create_text(80, 125, anchor=NW, text="20°C")
+        self.canvas_plant_info.create_text(5, 75, anchor=NW, text=str(self.soil_moisture)+"%")
+        self.canvas_plant_info.create_text(105, 65, anchor=NW, text=str(self.sunlight_hours)+" hours \n" + str(self.environment.sunlight_intensity) + " sunlight")
+        self.canvas_plant_info.create_text(5, 125, anchor=NW, text=str(self.environment.humidity)+"%")
+        self.canvas_plant_info.create_text(105, 125, anchor=NW, text=str(self.environment.temperature)+"°C")
 
     def close(self):
         self.canvas_plant_info.destroy()
@@ -129,6 +131,9 @@ class bathroom():
         self.frame = frame_manager.game_manager.frame
         self.plants = []
         self.canvas = None
+        self.temperature = random.randint(15,25)
+        self.humidity = random.randint(70,95)
+        self.sunlight_intensity = "indirect"
 
     def show(self):
         self.frame_manager.clear()
