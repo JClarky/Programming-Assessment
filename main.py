@@ -1,7 +1,7 @@
 from tkinter import *
 from PIL import Image, ImageTk
 from threading import Thread
-import time, random
+import time, random, sys
 
 #
 # Managers
@@ -34,6 +34,7 @@ class GameManager():
     def destroy(self):
         self.run = False
         self.root.destroy()
+        sys.exit()     
 
     def start(self):
         Thread(target=self.clock).start()
@@ -68,7 +69,12 @@ class GameManager():
 
 
             self.plant_manager.update()
-        
+
+            print(self.time)
+            
+            if 'normal' != self.root.state():
+                self.destroy()
+                
             time.sleep(0.2)
        
 # Frame manager
@@ -133,7 +139,18 @@ class plant():
         self.canvas.background = img 
         bg = self.canvas.create_image(0, 0, anchor=NW, image=img)
         self.canvas.place(anchor="e", x=280, y=400)
-        self.canvas.tag_bind(bg, '<ButtonPress-1>', self.clicked) 
+        self.canvas.tag_bind(bg, '<ButtonPress-1>', self.clicked)        
+        
+    def alert_show(self):
+        img = ImageTk.PhotoImage(Image.open('assets/!.png').resize((25, 25), Image.LANCZOS))
+        self.alert_canvas = Canvas(self.environment.frame_manager.game_manager.frame, width=25, height=25, bg="red", bd=0, highlightthickness=0, relief='ridge')
+        self.alert_canvas.background = img 
+        self.alert_canvas.create_image(0, 0, anchor=NW, image=img)
+        self.alert_canvas.place(anchor="e", x=280, y=350)
+
+    def alert_hide(self):
+        self.alert_canvas.destroy()
+
 
     def clicked(self, event):
         print("clicked, display plant info")
@@ -257,3 +274,6 @@ class navbar():
 
 if __name__ == '__main__':
     GameManager()
+
+
+print("end")
