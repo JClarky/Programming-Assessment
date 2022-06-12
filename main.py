@@ -120,7 +120,6 @@ class plant():
         self.plant_manager = plant_manager
         self.plant_manager.plants.append(self)
 
-        print("choosing type of plant (from database) and spawning at requested environment")
         self.info = random.choice(plants)   
         self.name = self.info["name"]
         self.environment.plants.append(self)
@@ -134,13 +133,13 @@ class plant():
     def draw(self):
         self.canvas = Canvas(self.environment.frame_manager.game_manager.frame, width=100, height=100)
 
-        img = ImageTk.PhotoImage(Image.open('assets/'+self.info["image"]).resize((100, 100), Image.LANCZOS))
+        img = ImageTk.PhotoImage(Image.open('assets/'+self.info["image"]).resize((100, 100), Image.Resampling.LANCZOS))
         self.canvas.background = img 
         bg = self.canvas.create_image(0, 0, anchor=NW, image=img)
         self.canvas.place(anchor="e", x=280, y=400)
         self.canvas.tag_bind(bg, '<ButtonPress-1>', self.clicked)       
 
-        img = ImageTk.PhotoImage(Image.open('assets/!.png').resize((25, 25), Image.LANCZOS))
+        img = ImageTk.PhotoImage(Image.open('assets/!.png').resize((25, 25), Image.Resampling.LANCZOS))
         self.alert_canvas = Canvas(self.environment.frame_manager.game_manager.frame, width=25, height=25, bg="red", bd=0, highlightthickness=0, relief='ridge')
         self.alert_canvas.background = img 
         self.alert_canvas.create_image(0, 0, anchor=NW, image=img)
@@ -243,7 +242,7 @@ class bathroom():
         self.canvas = Canvas(self.frame, width=self.frame_manager.game_manager.width, height=self.frame_manager.game_manager.height)
         self.canvas.pack()       
 
-        img = ImageTk.PhotoImage(Image.open('assets/bathroom.jpg').resize((self.frame_manager.game_manager.width, self.frame_manager.game_manager.height), Image.LANCZOS))
+        img = ImageTk.PhotoImage(Image.open('assets/bathroom.jpg').resize((self.frame_manager.game_manager.width, self.frame_manager.game_manager.height), Image.Resampling.LANCZOS))
         self.canvas.background = img  # Keep a reference in case this code is put in a function.
         bg = self.canvas.create_image(0, 0, anchor=NW, image=img)
         navbar(self, self.frame)
