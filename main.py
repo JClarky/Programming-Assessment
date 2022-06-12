@@ -44,7 +44,11 @@ class GameManager():
 
     def clock(self):   
         while self.run:     
-            self.time += 1
+            minutes = int(str(self.time)[len(str(self.time))-2:])
+            if minutes == 59:
+                self.time += 41
+            else:
+                self.time += 1 
 
             colon_index = 1
             if self.time > 999: 
@@ -65,7 +69,7 @@ class GameManager():
 
             self.plant_manager.update()
         
-            time.sleep(1)
+            time.sleep(0.2)
        
 # Frame manager
 class frameManager():
@@ -92,6 +96,9 @@ class plantManager():
         plant(environment, self)
     
     def update(self):
+        for enviro in self.enviros:
+            enviro.update()
+
         for plant in self.plants:
             plant.update()
 
@@ -117,6 +124,7 @@ class plant():
         self.sunlight_hours = 0
         self.spawn_time = self.environment.frame_manager.game_manager.time
         self.moisture_rate = self.info["moisture_rate"]
+        self.sunlight_last_update = 600
 
     def draw(self):
         self.canvas = Canvas(self.environment.frame_manager.game_manager.frame, width=100, height=100)
@@ -152,6 +160,10 @@ class plant():
 
     def update(self):        
         self.soil_moisture = self.soil_moisture - self.moisture_rate
+        if self.environment.frame_manager.game_manager.time - self.sunlight_last_update > 60:
+            if self.environment.sunlight_log == 1:
+                self.sunlight_hours += 1
+            self.sunlight_last_update = self.environment.frame_manager.game_manager.time
 
     
 
@@ -165,7 +177,8 @@ class bathroom():
         self.temperature = random.randint(15,25)
         self.humidity = random.randint(70,95)
         self.sunlight_intensity = "indirect"
-        
+        self.sunlight_log = None
+        self.sunlight_last_log = 600
 
     def show(self):
         self.frame_manager.clear()
@@ -173,9 +186,7 @@ class bathroom():
         self.frame.configure(background='white')
         self.frame_manager.game_manager.root.title("Bathroom")
         self.canvas = Canvas(self.frame, width=self.frame_manager.game_manager.width, height=self.frame_manager.game_manager.height)
-        self.canvas.pack()
-
-        
+        self.canvas.pack()       
 
         img = ImageTk.PhotoImage(Image.open('assets/bathroom.jpg').resize((self.frame_manager.game_manager.width, self.frame_manager.game_manager.height), Image.LANCZOS))
         self.canvas.background = img  # Keep a reference in case this code is put in a function.
@@ -184,6 +195,12 @@ class bathroom():
 
         for plant in self.plants:
             plant.draw()
+
+    def update(self):
+        if self.frame_manager.game_manager.time - self.sunlight_last_log > 60:
+            if 700 < self.frame_manager.game_manager.time < 1300: # Morning sun
+                self.sunlight_log = 1
+            self.sunlight_last_log = self.frame_manager.game_manager.time
 
 
 # Frame sub class
