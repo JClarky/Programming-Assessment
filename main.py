@@ -174,8 +174,10 @@ class plant():
         self.canvas_plant_info.create_text(105, 100, anchor=NW, text="Temperature")
         Button(self.canvas_plant_info, text="X", command=self.close).place(x=185, y=0)
 
+        hours, intensity = self.get_sunlight()
+
         self.canvas_plant_info.create_text(5, 75, anchor=NW, text=str(round(self.soil_moisture))+"%")
-        self.canvas_plant_info.create_text(105, 65, anchor=NW, text=str(self.get_sunlight())+" hours \n" + str(self.environment.sunlight_intensity) + " sunlight")
+        self.canvas_plant_info.create_text(105, 65, anchor=NW, text=str(hours)+" hours \n" + intensity + " sunlight")
         self.canvas_plant_info.create_text(5, 125, anchor=NW, text=str(self.environment.humidity)+"%")
         self.canvas_plant_info.create_text(105, 125, anchor=NW, text=str(self.environment.temperature)+"°C")
 
@@ -193,8 +195,34 @@ class plant():
         for point in last_24_hours:
             if point["intensity"] != "none":
                 hours += 1
+
+        if len(self.sunlight_log) < 168:
+            last_week = self.sunlight_log
+        else:
+            last_week = self.sunlight_log[-168:]
         
-        return(hours)
+        total_points_value = 0
+        for point in last_week:
+            if point["intensity"] == "low":
+                total_points_value += 150
+            elif point["intensity"] == "indirect":
+                total_points_value += 500
+            elif point["intensity"] == "direct":
+                total_points_value += 1000
+        
+        average_total = total_points_value / len(last_week)
+
+        if average_total < 100:
+            intensity = "none"
+        if 100 < average_total < 300:
+            intensity = "low"
+        if 300 < average_total < 700:
+            intensity = "indirect"
+        if 700 < average_total:
+            intensity = "direct"
+                
+         
+        return(hours, intensity)
 
     def update(self):        
         self.soil_moisture = self.soil_moisture - self.moisture_rate
@@ -254,6 +282,13 @@ class bathroom():
         if self.frame_manager.game_manager.time - self.sunlight_last_log > 60:
             if 700 < self.frame_manager.game_manager.time < 1300: # Morning sun
                 self.sunlight_log = 1
+                self.sunlight_intensity = "indirect"
+            elif 1300 < self.frame_manager.game_manager.time < 1700: # Afternoon sun
+                self.sunlight_log = 1
+                self.sunlight_intensity = "low"
+            else: # No sun
+                self.sunlight_log = 0
+                self.sunlight_intensity = "none"
             self.sunlight_last_log = self.frame_manager.game_manager.time
 
 
