@@ -69,13 +69,11 @@ class GameManager():
 
 
             self.plant_manager.update()
-
-            print(self.time)
             
             if 'normal' != self.root.state():
                 self.destroy()
                 
-            time.sleep(0.2)
+            time.sleep(0.005)
        
 # Frame manager
 class frameManager():
@@ -114,9 +112,9 @@ class plantManager():
 
 class plant():
     def __init__(self, environment, plant_manager):
-        plants = [{"name": "plant1", "image": "Plant-image.webp", "moisture_rate": 0.2}, 
-            {"name": "plant2", "image": "Plant-image.webp", "moisture_rate": 0.2}, 
-            {"name": "plant3", "image": "Plant-image.webp", "moisture_rate": 0.1}]
+        plants = [{"name": "plant1", "image": "Plant-image.webp", "moisture_rate": 0.2, "moisture_low":40, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}, 
+            {"name": "plant2", "image": "Plant-image.webp", "moisture_rate": 0.2, "moisture_low":40, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}, 
+            {"name": "plant3", "image": "Plant-image.webp", "moisture_rate": 0.2, "moisture_low":40, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}]
 
         self.environment = environment
         self.plant_manager = plant_manager
@@ -128,6 +126,7 @@ class plant():
         self.environment.plants.append(self)
         self.soil_moisture = random.randint(0, 30)
         self.sunlight_hours = 0
+        self.sunlight_log = []
         self.spawn_time = self.environment.frame_manager.game_manager.time
         self.moisture_rate = self.info["moisture_rate"]
         self.sunlight_last_update = 600
@@ -139,21 +138,30 @@ class plant():
         self.canvas.background = img 
         bg = self.canvas.create_image(0, 0, anchor=NW, image=img)
         self.canvas.place(anchor="e", x=280, y=400)
-        self.canvas.tag_bind(bg, '<ButtonPress-1>', self.clicked)        
-        
-    def alert_show(self):
+        self.canvas.tag_bind(bg, '<ButtonPress-1>', self.clicked)       
+
         img = ImageTk.PhotoImage(Image.open('assets/!.png').resize((25, 25), Image.LANCZOS))
         self.alert_canvas = Canvas(self.environment.frame_manager.game_manager.frame, width=25, height=25, bg="red", bd=0, highlightthickness=0, relief='ridge')
         self.alert_canvas.background = img 
         self.alert_canvas.create_image(0, 0, anchor=NW, image=img)
-        self.alert_canvas.place(anchor="e", x=280, y=350)
+        self.alert_canvas.place(anchor="e", x=280, y=350) 
+        
+    def alert_show(self):
+        try:
+            if self.environment.frame_manager.active_frame == self.environment:
+                self.alert_canvas.itemconfig(1, state='normal')
+            else:
+                self.alert_hide()
+        except:
+            pass
 
     def alert_hide(self):
-        self.alert_canvas.destroy()
-
+        try:
+            self.alert_canvas.itemconfig(1, state='hidden')
+        except:
+            pass
 
     def clicked(self, event):
-        print("clicked, display plant info")
         self.canvas_plant_info = Canvas(self.environment.frame_manager.game_manager.frame, width=200, height=150)
         self.canvas_plant_info.place(anchor="e", x=305, y=350)        
         self.canvas_plant_info.create_rectangle(0,50,100,100, fill="white")
@@ -168,19 +176,49 @@ class plant():
         Button(self.canvas_plant_info, text="X", command=self.close).place(x=185, y=0)
 
         self.canvas_plant_info.create_text(5, 75, anchor=NW, text=str(round(self.soil_moisture))+"%")
-        self.canvas_plant_info.create_text(105, 65, anchor=NW, text=str(self.sunlight_hours)+" hours \n" + str(self.environment.sunlight_intensity) + " sunlight")
+        self.canvas_plant_info.create_text(105, 65, anchor=NW, text=str(self.get_sunlight())+" hours \n" + str(self.environment.sunlight_intensity) + " sunlight")
         self.canvas_plant_info.create_text(5, 125, anchor=NW, text=str(self.environment.humidity)+"%")
         self.canvas_plant_info.create_text(105, 125, anchor=NW, text=str(self.environment.temperature)+"°C")
 
     def close(self):
         self.canvas_plant_info.destroy()
 
+    def get_sunlight(self):
+        if len(self.sunlight_log) < 24:
+            last_24_hours = self.sunlight_log
+        else:
+            last_24_hours = self.sunlight_log[-24:]
+
+        hours = 0
+
+        for point in last_24_hours:
+            if point["intensity"] != "none":
+                hours += 1
+        
+        return(hours)
+
     def update(self):        
         self.soil_moisture = self.soil_moisture - self.moisture_rate
         if self.environment.frame_manager.game_manager.time - self.sunlight_last_update > 60:
             if self.environment.sunlight_log == 1:
                 self.sunlight_hours += 1
+            self.sunlight_log.append({"time":self.environment.frame_manager.game_manager.time, "intensity":self.environment.sunlight_intensity})
             self.sunlight_last_update = self.environment.frame_manager.game_manager.time
+
+        if self.soil_moisture < self.info["moisture_low"]:
+            self.alert_show()
+        elif self.environment.temperature < self.info["temperature_low"]:
+            self.alert_show()
+        elif self.environment.temperature > self.info["temperature_high"]:
+            self.alert_show()
+        elif self.environment.humidity < self.info["humidity_low"]:
+            self.alert_show()
+        elif self.environment.humidity > self.info["humidity_high"]:
+            self.alert_show()
+        elif self.environment.sunlight_intensity != self.info["sunlight_intensity"]:
+            self.alert_show()
+        else: 
+            self.alert_hide()
 
     
 
@@ -230,6 +268,7 @@ class menu():
         self.frame_manager.clear()
         self.frame.configure(background='white')
         self.frame_manager.game_manager.root.title("Main Menu")
+        self.frame_manager.active_frame = self
 
         container = Frame(self.frame, background = "white")
         container.place(anchor="center", relx=0.5, rely=0.7, height=500, width=800)
