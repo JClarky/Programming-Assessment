@@ -161,25 +161,35 @@ class plant():
             pass
 
     def clicked(self, event):
-        self.canvas_plant_info = Canvas(self.environment.frame_manager.game_manager.frame, width=200, height=150)
-        self.canvas_plant_info.place(anchor="e", x=305, y=350)        
-        self.canvas_plant_info.create_rectangle(0,50,100,100, fill="white")
-        self.canvas_plant_info.create_rectangle(100,50,200,100, fill="white")
-        self.canvas_plant_info.create_rectangle(0,100,100,150, fill="white")
-        self.canvas_plant_info.create_rectangle(100,100,200,150, fill="white")
+        self.canvas_plant_info = Canvas(self.environment.frame_manager.game_manager.frame, width=200, height=155)
+        self.canvas_plant_info.place(anchor="e", x=330, y=330)        
+        self.canvas_plant_info.create_rectangle(0,30,100,80, fill="white")
+        self.canvas_plant_info.create_rectangle(100,30,200,80, fill="white")
+        self.canvas_plant_info.create_rectangle(0,80,100,130, fill="white")
+        self.canvas_plant_info.create_rectangle(100,80,200,130, fill="white")
         self.canvas_plant_info.create_text(5, 0, anchor=NW, text=self.info["name"])
-        self.canvas_plant_info.create_text(5, 50, anchor=NW, text="Soil Moisture")
-        self.canvas_plant_info.create_text(105, 50, anchor=NW, text="Sunlight")
-        self.canvas_plant_info.create_text(5, 100, anchor=NW, text="Humidity")
-        self.canvas_plant_info.create_text(105, 100, anchor=NW, text="Temperature")
+        self.canvas_plant_info.create_text(5, 30, anchor=NW, text="Soil Moisture")
+        self.canvas_plant_info.create_text(105, 30, anchor=NW, text="Sunlight")
+        self.canvas_plant_info.create_text(5, 80, anchor=NW, text="Humidity")
+        self.canvas_plant_info.create_text(105, 80, anchor=NW, text="Temperature")
         Button(self.canvas_plant_info, text="X", command=self.close).place(x=185, y=0)
 
         hours, intensity = self.get_sunlight()
 
-        self.canvas_plant_info.create_text(5, 75, anchor=NW, text=str(round(self.soil_moisture))+"%")
-        self.canvas_plant_info.create_text(105, 65, anchor=NW, text=str(hours)+" hours \n" + intensity + " sunlight")
-        self.canvas_plant_info.create_text(5, 125, anchor=NW, text=str(self.environment.humidity)+"%")
-        self.canvas_plant_info.create_text(105, 125, anchor=NW, text=str(self.environment.temperature)+"°C")
+        self.canvas_plant_info.create_text(5, 55, anchor=NW, text=str(round(self.soil_moisture))+"%")
+        self.canvas_plant_info.create_text(105, 45, anchor=NW, text=str(hours)+" hours \n" + intensity + " sunlight")
+        self.canvas_plant_info.create_text(5, 105, anchor=NW, text=str(self.environment.humidity)+"%")
+        self.canvas_plant_info.create_text(105, 105, anchor=NW, text=str(self.environment.temperature)+"°C")
+
+        Button(self.canvas_plant_info, text="Move", command=self.move).place(x=0, y=133)
+        Button(self.canvas_plant_info, text="Water", command=self.water).place(x=45, y=133)
+
+    def water(self):
+        print("water")
+        self.soil_moisture = 75
+
+    def move(self):
+        print("move")
 
     def close(self):
         self.canvas_plant_info.destroy()
@@ -212,11 +222,11 @@ class plant():
         
         average_total = total_points_value / len(last_week)
 
-        if average_total < 100:
+        if average_total <= 100:
             intensity = "none"
-        if 100 < average_total < 300:
+        if 100 < average_total <= 300:
             intensity = "low"
-        if 300 < average_total < 700:
+        if 300 < average_total <= 700:
             intensity = "indirect"
         if 700 < average_total:
             intensity = "direct"
