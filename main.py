@@ -118,9 +118,9 @@ class plantManager():
 
 class plant():
     def __init__(self, environment, plant_manager):
-        plants = [{"name": "plant1", "image": "Plant-image.webp", "moisture_rate": 0.2, "moisture_low":40, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}, 
-            {"name": "plant2", "image": "Plant-image.webp", "moisture_rate": 0.2, "moisture_low":40, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}, 
-            {"name": "plant3", "image": "Plant-image.webp", "moisture_rate": 0.2, "moisture_low":40, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}]
+        plants = [{"name": "plant1", "image": "Plant-image.webp", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}, 
+            {"name": "plant2", "image": "Plant-image.webp", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}, 
+            {"name": "plant3", "image": "Plant-image.webp", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}]
 
         self.environment = environment
         self.plant_manager = plant_manager
@@ -135,6 +135,8 @@ class plant():
         self.spawn_time = self.environment.frame_manager.game_manager.time
         self.moisture_rate = self.info["moisture_rate"]
         self.sunlight_last_update = 600
+        self.out_of_range = 0
+        self.info_displayed = False
 
     def draw(self):
         self.canvas = Canvas(self.environment.frame_manager.game_manager.frame, width=100, height=100)
@@ -151,9 +153,9 @@ class plant():
         self.alert_canvas.create_image(0, 0, anchor=NW, image=img)
         self.alert_canvas.place(anchor="e", x=280, y=350) 
         
-    def alert_show(self):
+    def alert_show(self, location=None):
         try:
-            if self.environment.frame_manager.active_frame == self.environment:
+            if self.environment.frame_manager.active_frame == self.environment and self.info_displayed == False:
                 self.alert_canvas.itemconfig(1, state='normal')
             else:
                 self.alert_hide()
@@ -167,6 +169,7 @@ class plant():
             pass
 
     def clicked(self, event):
+        self.info_displayed = True
         self.canvas_plant_info = Canvas(self.environment.frame_manager.game_manager.frame, width=200, height=155)
         self.canvas_plant_info.place(anchor="e", x=330, y=330)        
         self.canvas_plant_info.create_rectangle(0,30,100,80, fill="white")
@@ -190,6 +193,8 @@ class plant():
         Button(self.canvas_plant_info, text="Move", command=self.move).place(x=0, y=133)
         Button(self.canvas_plant_info, text="Water", command=self.water).place(x=45, y=133)
 
+        
+
     def water(self):
         print("water")
         self.soil_moisture = 75
@@ -197,8 +202,12 @@ class plant():
     def move(self):
         print("move")
 
+    def die(self):
+        print("plant deadd")
+
     def close(self):
         self.canvas_plant_info.destroy()
+        self.info_displayed = False
 
     def get_sunlight(self):
         if len(self.sunlight_log) < 24:
@@ -248,20 +257,21 @@ class plant():
             self.sunlight_log.append({"time":self.environment.frame_manager.game_manager.time, "intensity":self.environment.sunlight_intensity})
             self.sunlight_last_update = self.environment.frame_manager.game_manager.time
 
-        if self.soil_moisture < self.info["moisture_low"]:
-            self.alert_show()
-        elif self.environment.temperature < self.info["temperature_low"]:
-            self.alert_show()
-        elif self.environment.temperature > self.info["temperature_high"]:
-            self.alert_show()
-        elif self.environment.humidity < self.info["humidity_low"]:
-            self.alert_show()
-        elif self.environment.humidity > self.info["humidity_high"]:
-            self.alert_show()
+        if self.soil_moisture < self.info["moisture_low"] or self.soil_moisture > self.info["moisture_high"]:
+            self.alert_show("moisture")
+            self.out_of_range += 1
+        elif self.environment.temperature < self.info["temperature_low"] or self.environment.temperature > self.info["temperature_high"]:
+            self.alert_show("temperature")
+            self.out_of_range += 1
+        elif self.environment.humidity < self.info["humidity_low"] or self.environment.humidity > self.info["humidity_high"]:
+            self.alert_show("humidity")
+            self.out_of_range += 1
         elif self.environment.sunlight_intensity != self.info["sunlight_intensity"]:
-            self.alert_show()
+            self.alert_show("sunlight")
+            self.out_of_range += 1
         else: 
             self.alert_hide()
+            self.out_of_range = 0
 
         try:
             hours, intensity = self.get_sunlight()
@@ -272,7 +282,9 @@ class plant():
         except:
             pass
 
-    
+        # if any value are outside range for more then 24 hours, die            
+        if self.out_of_range > 1440:
+            self.die()
 
 # Frame sub class
 class bathroom():
