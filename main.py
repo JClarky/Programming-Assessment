@@ -55,8 +55,15 @@ class GameManager():
             if self.time > 999: 
                 colon_index = 2
 
+            hours = int(str(self.time)[:colon_index])
+
+            if hours > 23:
+                hours = hours % 24
+            
             time_formatted = str(self.time)
-            time_formatted = time_formatted[:colon_index]+":"+time_formatted[colon_index:]
+            time_formatted = str(hours)+":"+time_formatted[colon_index:]
+
+            self.time_formatted = int(str(hours)+str(self.time)[colon_index:])
             
             try:
                 try:
@@ -66,7 +73,6 @@ class GameManager():
                 self.update_text = self.frame_manager.active_frame.canvas.create_text(10, 10, anchor=NW, text=time_formatted)
             except:
                 pass
-
 
             self.plant_manager.update()
             
@@ -176,10 +182,10 @@ class plant():
 
         hours, intensity = self.get_sunlight()
 
-        self.canvas_plant_info.create_text(5, 55, anchor=NW, text=str(round(self.soil_moisture))+"%")
-        self.canvas_plant_info.create_text(105, 45, anchor=NW, text=str(hours)+" hours \n" + intensity + " sunlight")
-        self.canvas_plant_info.create_text(5, 105, anchor=NW, text=str(self.environment.humidity)+"%")
-        self.canvas_plant_info.create_text(105, 105, anchor=NW, text=str(self.environment.temperature)+"°C")
+        self.soil_moisture_text = self.canvas_plant_info.create_text(5, 55, anchor=NW, text=str(round(self.soil_moisture))+"%")
+        self.sunlight_text = self.canvas_plant_info.create_text(105, 45, anchor=NW, text=str(hours)+" hours \n" + intensity + " sunlight")
+        self.humidity_text = self.canvas_plant_info.create_text(5, 105, anchor=NW, text=str(self.environment.humidity)+"%")
+        self.temperature_text = self.canvas_plant_info.create_text(105, 105, anchor=NW, text=str(self.environment.temperature)+"°C")
 
         Button(self.canvas_plant_info, text="Move", command=self.move).place(x=0, y=133)
         Button(self.canvas_plant_info, text="Water", command=self.water).place(x=45, y=133)
@@ -257,6 +263,15 @@ class plant():
         else: 
             self.alert_hide()
 
+        try:
+            hours, intensity = self.get_sunlight()
+            self.canvas_plant_info.itemconfig(self.soil_moisture_text, text=str(round(self.soil_moisture))+"%")
+            self.canvas_plant_info.itemconfig(self.sunlight_text, text=str(hours)+" hours \n" + intensity + " sunlight")
+            self.canvas_plant_info.itemconfig(self.humidity_text, text=str(self.environment.humidity)+"%")
+            self.canvas_plant_info.itemconfig(self.temperature_text, text=str(self.environment.temperature)+"°C")
+        except:
+            pass
+
     
 
 # Frame sub class
@@ -290,10 +305,10 @@ class bathroom():
 
     def update(self):
         if self.frame_manager.game_manager.time - self.sunlight_last_log > 60:
-            if 700 < self.frame_manager.game_manager.time < 1300: # Morning sun
+            if 700 < self.frame_manager.game_manager.time_formatted < 1300: # Morning sun
                 self.sunlight_log = 1
                 self.sunlight_intensity = "indirect"
-            elif 1300 < self.frame_manager.game_manager.time < 1700: # Afternoon sun
+            elif 1300 < self.frame_manager.game_manager.time_formatted < 1700: # Afternoon sun
                 self.sunlight_log = 1
                 self.sunlight_intensity = "low"
             else: # No sun
