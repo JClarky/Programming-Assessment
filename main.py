@@ -107,9 +107,6 @@ class plantManager():
         plant(environment, self)
     
     def update(self):
-        for enviro in self.enviros:
-            enviro.update()
-
         for plant in self.plants:
             plant.update()
 
@@ -120,8 +117,8 @@ class plantManager():
 class plant():
     def __init__(self, environment, plant_manager):
         plants = [{"name": "plant1", "image": "Plant-image.webp", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}, 
-            {"name": "plant2", "image": "Plant-image.webp", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}, 
-            {"name": "plant3", "image": "Plant-image.webp", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}]
+            {"name": "plant2", "image": "plant.png", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}, 
+            {"name": "plant3", "image": "plant.png", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}]
 
         self.environment = environment
         self.plant_manager = plant_manager
@@ -131,8 +128,7 @@ class plant():
         self.name = self.info["name"]
         self.environment.plants.append(self)
         self.soil_moisture = random.randint(0, 30)
-        self.sunlight_hours = 0
-        self.sunlight_log = []
+
         self.spawn_time = self.environment.frame_manager.game_manager.time
         self.moisture_rate = self.info["moisture_rate"]
         self.sunlight_last_update = 600
@@ -145,13 +141,10 @@ class plant():
         self.temperature_warning = None
 
     def draw(self):
-        self.canvas = Canvas(self.environment.frame_manager.game_manager.frame, width=100, height=100)
-
         img = ImageTk.PhotoImage(Image.open('assets/'+self.info["image"]).resize((100, 100), Image.Resampling.LANCZOS))
-        self.canvas.background = img 
-        bg = self.canvas.create_image(0, 0, anchor=NW, image=img)
-        self.canvas.place(anchor="e", x=280, y=400)
-        self.canvas.tag_bind(bg, '<ButtonPress-1>', self.clicked)                   
+        created = self.environment.canvas.create_image(200, 325, image=img, anchor=NW)
+        self.environment.canvas.tag_bind(created, '<ButtonPress-1>', self.clicked) 
+        created.tkraise()            
         
     def alert_show(self, location=None):
         try:
@@ -174,27 +167,26 @@ class plant():
 
     def clicked(self, event):
         self.info_displayed = True
-        hours, intensity = self.get_sunlight()
-        self.canvas_plant_info = Canvas(self.environment.frame_manager.game_manager.frame, width=290, height=155)
-        self.canvas_plant_info.place(anchor="e", x=330, y=330)        
+        self.canvas_plant_info = Canvas(self.environment.frame_manager.game_manager.frame, width=290, height=155, bg="#262626", relief="ridge", bd=0, highlightthickness=0)
+        self.canvas_plant_info.place(anchor="e", x=400, y=320)        
         self.canvas_plant_info.create_rectangle(0,30,145,80, fill="white")
         self.canvas_plant_info.create_rectangle(145,30,290,80, fill="white")
         self.canvas_plant_info.create_rectangle(0,80,145,130, fill="white")
         self.canvas_plant_info.create_rectangle(145,80,290,130, fill="white")
-        self.canvas_plant_info.create_text(5, 0, anchor=NW, text=self.info["name"])
+        self.canvas_plant_info.create_text(5, 0, anchor=NW, text=self.info["name"], fill="white")
         self.soil_moisture_text = self.canvas_plant_info.create_text(5, 30, font='Helvetica 8 bold', anchor=NW, text="Soil Moisture "+ str(round(self.soil_moisture))+"%")
-        self.sunlight_text = self.canvas_plant_info.create_text(150, 30, font='Helvetica 8 bold', anchor=NW, text=intensity + " sunlight for " + str(hours)+" hrs")
+        self.sunlight_text = self.canvas_plant_info.create_text(150, 30, font='Helvetica 8 bold', anchor=NW, text=self.environment.sunlight_intensity + " sunlight for " + str(self.environment.sunlight_hours)+" hrs")
         self.humidity_text = self.canvas_plant_info.create_text(5, 80, font='Helvetica 8 bold', anchor=NW, text="Humidity " + str(self.environment.humidity)+"%")
         self.temperature_text = self.canvas_plant_info.create_text(150, 80, font='Helvetica 8 bold', anchor=NW, text="Temperature " + str(self.environment.temperature)+"°C")
-        Button(self.canvas_plant_info, text="X", command=self.close).place(x=265, y=0)
+        button(self.canvas_plant_info, text="X", command=self.close, padx=6).place(x=265, y=0)
 
         self.canvas_plant_info.create_text(5, 45, anchor=NW, text="Recommended\n"+str(self.info["moisture_low"])+"-"+str(self.info["moisture_high"])+"%")
-        self.canvas_plant_info.create_text(150, 45, anchor=NW, text="Recommended\n" + self.info["sunlight_intensity"] + " sunlight for " + str(self.info["sunlight_hours"])+" hrs")
+        self.canvas_plant_info.create_text(150, 45, anchor=NW, text="Recommended\n" + self.info["sunlight_intensity"] + " for " + str(self.info["sunlight_hours"])+" hrs")
         self.canvas_plant_info.create_text(5, 95, anchor=NW, text="Recommended\n" + str(self.info["humidity_low"])+"-"+str(self.info["humidity_high"])+"%")
         self.canvas_plant_info.create_text(150, 95, anchor=NW, text="Recommended\n"+ str(self.info["temperature_low"])+"-"+str(self.info["temperature_high"])+"°C")
 
-        Button(self.canvas_plant_info, text="Move", command=self.move).place(x=0, y=133)
-        Button(self.canvas_plant_info, text="Water", command=self.water).place(x=45, y=133)
+        button(self.canvas_plant_info, text="Move", command=self.move, padx=2).place(x=0, y=130)
+        button(self.canvas_plant_info, text="Water", command=self.water, padx=2).place(x=45, y=130)
 
     def create_info_warning(self, x, y):
         img = ImageTk.PhotoImage(Image.open('assets/!.png').resize((25, 25), Image.Resampling.LANCZOS))
@@ -221,13 +213,13 @@ class plant():
     def show_info_warning(self, name):
         if self.info_displayed:
             if name == "moisture" and self.moisture_warning == None:
-                self.moisture_warning = self.create_info_warning(145,30)
+                self.moisture_warning = self.create_info_warning(145,67)
             elif name == "sunlight" and self.sunlight_warning == None:
-                self.sunlight_warning = self.create_info_warning(290,30)
+                self.sunlight_warning = self.create_info_warning(290,67)
             elif name == "temperature" and self.temperature_warning == None:
-                self.temperature_warning = self.create_info_warning(290,89)
+                self.temperature_warning = self.create_info_warning(290,116)
             elif name == "humidity" and self.humidity_warning == None:
-                self.humidity_warning = self.create_info_warning(145,89)
+                self.humidity_warning = self.create_info_warning(145,116)
         else:
             self.destroy_info_warning("moisture")
             self.destroy_info_warning("sunlight")
@@ -248,53 +240,10 @@ class plant():
         self.canvas_plant_info.destroy()
         self.info_displayed = False
 
-    def get_sunlight(self):
-        if len(self.sunlight_log) < 24:
-            last_24_hours = self.sunlight_log
-        else:
-            last_24_hours = self.sunlight_log[-24:]
-
-        hours = 0
-
-        for point in last_24_hours:
-            if point["intensity"] != "none":
-                hours += 1
-
-        if len(self.sunlight_log) < 168:
-            last_week = self.sunlight_log
-        else:
-            last_week = self.sunlight_log[-168:]
-        
-        total_points_value = 0
-        for point in last_week:
-            if point["intensity"] == "low":
-                total_points_value += 150
-            elif point["intensity"] == "indirect":
-                total_points_value += 500
-            elif point["intensity"] == "direct":
-                total_points_value += 1000
-        
-        average_total = total_points_value / len(last_week)
-
-        if average_total <= 100:
-            intensity = "none"
-        if 100 < average_total <= 300:
-            intensity = "low"
-        if 300 < average_total <= 700:
-            intensity = "indirect"
-        if 700 < average_total:
-            intensity = "direct"
-                
-         
-        return(hours, intensity)
-
     def update(self):        
-        self.soil_moisture = self.soil_moisture - self.moisture_rate
-        if self.environment.frame_manager.game_manager.time - self.sunlight_last_update > 60:
-            if self.environment.sunlight_log == 1:
-                self.sunlight_hours += 1
-            self.sunlight_log.append({"time":self.environment.frame_manager.game_manager.time, "intensity":self.environment.sunlight_intensity})
-            self.sunlight_last_update = self.environment.frame_manager.game_manager.time
+
+        if self.soil_moisture > 0:
+            self.soil_moisture = self.soil_moisture - self.moisture_rate
 
         alert = False
         
@@ -338,9 +287,8 @@ class plant():
             self.alert_show()
 
         try:
-            hours, intensity = self.get_sunlight()
             self.canvas_plant_info.itemconfig(self.soil_moisture_text, text="Soil Moisture "+ str(round(self.soil_moisture))+"%")
-            self.canvas_plant_info.itemconfig(self.sunlight_text, text=intensity + " sunlight for " + str(hours)+" hrs")
+            self.canvas_plant_info.itemconfig(self.sunlight_text, text=self.environment.sunlight_intensity + " sunlight for " + str(self.environment.sunlight_hours)+" hrs")
             self.canvas_plant_info.itemconfig(self.humidity_text, text="Humidity " + str(self.environment.humidity)+"%")
             self.canvas_plant_info.itemconfig(self.temperature_text, text="Temperature " + str(self.environment.temperature)+"°C")
         except:
@@ -360,8 +308,7 @@ class bathroom():
         self.temperature = random.randint(15,25)
         self.humidity = random.randint(70,95)
         self.sunlight_intensity = "indirect"
-        self.sunlight_log = None
-        self.sunlight_last_log = 600
+        self.sunlight_hours = 7
 
     def show(self):
         self.frame_manager.clear()
@@ -379,20 +326,19 @@ class bathroom():
         for plant in self.plants:
             plant.draw()
 
-    def update(self):
-        if self.frame_manager.game_manager.time - self.sunlight_last_log > 60:
-            if 700 < self.frame_manager.game_manager.time_formatted < 1300: # Morning sun
-                self.sunlight_log = 1
-                self.sunlight_intensity = "indirect"
-            elif 1300 < self.frame_manager.game_manager.time_formatted < 1700: # Afternoon sun
-                self.sunlight_log = 1
-                self.sunlight_intensity = "low"
-            else: # No sun
-                self.sunlight_log = 0
-                self.sunlight_intensity = "none"
-            self.sunlight_last_log = self.frame_manager.game_manager.time
+class button(Button):
+    def __init__(self, parent, padx=None, pady=None, *args, **kwargs):
+        self.parent = parent        
 
+        if padx == None:
+            padx = 20
+        if pady == None:
+            pady = 2
 
+        Button.__init__(self, parent, borderwidth=1, relief='solid', bg="#6bb846", padx=padx, pady=pady,  *args, **kwargs)
+
+        self.pack(padx=15, pady=5)
+        
 # Frame sub class
 class menu():
     def __init__(self, frame_manager):
@@ -416,9 +362,9 @@ class menu():
         label.image=logo 
         label.pack()
 
-        Button(container, text="Play", command=lambda: self.frame_manager.game_manager.start()).pack()
-        Button(container, text="Instructions", command=lambda: plantManager()).pack()
-        Button(container, text="Exit", command=lambda: self.frame_manager.game_manager.destroy()).pack()
+        button(container, text="Play", command=lambda: self.frame_manager.game_manager.start())
+        button(container, text="Instructions", command=lambda: plantManager())
+        button(container, text="Exit", command=lambda: self.frame_manager.game_manager.destroy())
 
         copyright = Label(self.frame, text="Copyright EzSoil 2022", background="white")
         copyright.place(x = 20, y = self.frame_manager.game_manager.height-20, anchor = 'sw')
@@ -436,8 +382,8 @@ class navbar():
         container = Frame(self.frame, background = "white")
         container.place(anchor="n")
 
-        Button(self.frame, text ="Bathroom", command = self.bathroom_button).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width/2, y=15)
-        Button(self.frame, text ="Exit to Menu", command = self.menu_button).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width, y=15)
+        button(self.frame, text ="Bathroom", command = self.bathroom_button).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width/2, y=15)
+        button(self.frame, text ="Exit to Menu", command = self.menu_button).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width, y=15)
 
     def bathroom_button(self):
         self.parent_frame.frame_manager.bathroom.show()
