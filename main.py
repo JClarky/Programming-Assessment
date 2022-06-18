@@ -1,4 +1,5 @@
 from tkinter import *
+from xmlrpc.client import FastParser
 from PIL import Image, ImageTk
 from threading import Thread
 import time, random, sys
@@ -136,7 +137,12 @@ class plant():
         self.moisture_rate = self.info["moisture_rate"]
         self.sunlight_last_update = 600
         self.out_of_range = 0
-        self.info_displayed = False
+        self.info_displayed = False        
+
+        self.moisture_warning = None
+        self.sunlight_warning = None
+        self.humidity_warning = None
+        self.temperature_warning = None
 
     def draw(self):
         self.canvas = Canvas(self.environment.frame_manager.game_manager.frame, width=100, height=100)
@@ -145,55 +151,88 @@ class plant():
         self.canvas.background = img 
         bg = self.canvas.create_image(0, 0, anchor=NW, image=img)
         self.canvas.place(anchor="e", x=280, y=400)
-        self.canvas.tag_bind(bg, '<ButtonPress-1>', self.clicked)       
-
-        img = ImageTk.PhotoImage(Image.open('assets/!.png').resize((25, 25), Image.Resampling.LANCZOS))
-        self.alert_canvas = Canvas(self.environment.frame_manager.game_manager.frame, width=25, height=25, bg="red", bd=0, highlightthickness=0, relief='ridge')
-        self.alert_canvas.background = img 
-        self.alert_canvas.create_image(0, 0, anchor=NW, image=img)
-        self.alert_canvas.place(anchor="e", x=280, y=350) 
+        self.canvas.tag_bind(bg, '<ButtonPress-1>', self.clicked)                   
         
     def alert_show(self, location=None):
         try:
             if self.environment.frame_manager.active_frame == self.environment and self.info_displayed == False:
-                self.alert_canvas.itemconfig(1, state='normal')
+                img = ImageTk.PhotoImage(Image.open('assets/!.png').resize((25, 25), Image.Resampling.LANCZOS))
+                self.alert_canvas = Canvas(self.environment.frame_manager.game_manager.frame, width=25, height=25, bg="red", bd=0, highlightthickness=0, relief='ridge')
+                self.alert_canvas.background = img 
+                self.alert_canvas.create_image(0, 0, anchor=NW, image=img)
+                self.alert_canvas.place(anchor="e", x=280, y=350) 
             else:
                 self.alert_hide()
-        except:
-            pass
+        except Exception as e:
+            print(e)
 
     def alert_hide(self):
         try:
-            self.alert_canvas.itemconfig(1, state='hidden')
+            self.alert_canvas.destroy()
         except:
             pass
 
     def clicked(self, event):
         self.info_displayed = True
-        self.canvas_plant_info = Canvas(self.environment.frame_manager.game_manager.frame, width=200, height=155)
-        self.canvas_plant_info.place(anchor="e", x=330, y=330)        
-        self.canvas_plant_info.create_rectangle(0,30,100,80, fill="white")
-        self.canvas_plant_info.create_rectangle(100,30,200,80, fill="white")
-        self.canvas_plant_info.create_rectangle(0,80,100,130, fill="white")
-        self.canvas_plant_info.create_rectangle(100,80,200,130, fill="white")
-        self.canvas_plant_info.create_text(5, 0, anchor=NW, text=self.info["name"])
-        self.canvas_plant_info.create_text(5, 30, anchor=NW, text="Soil Moisture")
-        self.canvas_plant_info.create_text(105, 30, anchor=NW, text="Sunlight")
-        self.canvas_plant_info.create_text(5, 80, anchor=NW, text="Humidity")
-        self.canvas_plant_info.create_text(105, 80, anchor=NW, text="Temperature")
-        Button(self.canvas_plant_info, text="X", command=self.close).place(x=185, y=0)
-
         hours, intensity = self.get_sunlight()
+        self.canvas_plant_info = Canvas(self.environment.frame_manager.game_manager.frame, width=290, height=155)
+        self.canvas_plant_info.place(anchor="e", x=330, y=330)        
+        self.canvas_plant_info.create_rectangle(0,30,145,80, fill="white")
+        self.canvas_plant_info.create_rectangle(145,30,290,80, fill="white")
+        self.canvas_plant_info.create_rectangle(0,80,145,130, fill="white")
+        self.canvas_plant_info.create_rectangle(145,80,290,130, fill="white")
+        self.canvas_plant_info.create_text(5, 0, anchor=NW, text=self.info["name"])
+        self.soil_moisture_text = self.canvas_plant_info.create_text(5, 30, font='Helvetica 8 bold', anchor=NW, text="Soil Moisture "+ str(round(self.soil_moisture))+"%")
+        self.sunlight_text = self.canvas_plant_info.create_text(150, 30, font='Helvetica 8 bold', anchor=NW, text=intensity + " sunlight for " + str(hours)+" hrs")
+        self.humidity_text = self.canvas_plant_info.create_text(5, 80, font='Helvetica 8 bold', anchor=NW, text="Humidity " + str(self.environment.humidity)+"%")
+        self.temperature_text = self.canvas_plant_info.create_text(150, 80, font='Helvetica 8 bold', anchor=NW, text="Temperature " + str(self.environment.temperature)+"°C")
+        Button(self.canvas_plant_info, text="X", command=self.close).place(x=265, y=0)
 
-        self.soil_moisture_text = self.canvas_plant_info.create_text(5, 55, anchor=NW, text=str(round(self.soil_moisture))+"%")
-        self.sunlight_text = self.canvas_plant_info.create_text(105, 45, anchor=NW, text=str(hours)+" hours \n" + intensity + " sunlight")
-        self.humidity_text = self.canvas_plant_info.create_text(5, 105, anchor=NW, text=str(self.environment.humidity)+"%")
-        self.temperature_text = self.canvas_plant_info.create_text(105, 105, anchor=NW, text=str(self.environment.temperature)+"°C")
+        self.canvas_plant_info.create_text(5, 45, anchor=NW, text="Recommended\n"+str(self.info["moisture_low"])+"-"+str(self.info["moisture_high"])+"%")
+        self.canvas_plant_info.create_text(150, 45, anchor=NW, text="Recommended\n" + self.info["sunlight_intensity"] + " sunlight for " + str(self.info["sunlight_hours"])+" hrs")
+        self.canvas_plant_info.create_text(5, 95, anchor=NW, text="Recommended\n" + str(self.info["humidity_low"])+"-"+str(self.info["humidity_high"])+"%")
+        self.canvas_plant_info.create_text(150, 95, anchor=NW, text="Recommended\n"+ str(self.info["temperature_low"])+"-"+str(self.info["temperature_high"])+"°C")
 
         Button(self.canvas_plant_info, text="Move", command=self.move).place(x=0, y=133)
         Button(self.canvas_plant_info, text="Water", command=self.water).place(x=45, y=133)
 
+    def create_info_warning(self, x, y):
+        img = ImageTk.PhotoImage(Image.open('assets/!.png').resize((25, 25), Image.Resampling.LANCZOS))
+        temp = Canvas(self.canvas_plant_info, width=25, height=25, bg="red", bd=0, highlightthickness=0, relief='ridge')
+        temp.background = img 
+        temp.create_image(0, 0, anchor=NW, image=img)
+        temp.place(anchor="e", x=x, y=y) 
+        return(temp)
+
+    def destroy_info_warning(self, name):
+        if name == "moisture" and self.moisture_warning != None:            
+            self.moisture_warning.destroy()        
+            self.moisture_warning = None         
+        elif name == "sunlight" and self.sunlight_warning != None:
+            self.sunlight_warning.destroy()
+            self.sunlight_warning = None
+        elif name == "temperature" and self.temperature_warning != None:
+            self.temperature_warning.destroy()
+            self.temperature_warning = None
+        elif name == "humidity" and self.humidity_warning != None:
+            self.humidity_warning.destroy()
+            self.humidity_warning = None
         
+    def show_info_warning(self, name):
+        if self.info_displayed:
+            if name == "moisture" and self.moisture_warning == None:
+                self.moisture_warning = self.create_info_warning(145,30)
+            elif name == "sunlight" and self.sunlight_warning == None:
+                self.sunlight_warning = self.create_info_warning(290,30)
+            elif name == "temperature" and self.temperature_warning == None:
+                self.temperature_warning = self.create_info_warning(290,89)
+            elif name == "humidity" and self.humidity_warning == None:
+                self.humidity_warning = self.create_info_warning(145,89)
+        else:
+            self.destroy_info_warning("moisture")
+            self.destroy_info_warning("sunlight")
+            self.destroy_info_warning("temperature")
+            self.destroy_info_warning("humidity")
 
     def water(self):
         print("water")
@@ -257,28 +296,53 @@ class plant():
             self.sunlight_log.append({"time":self.environment.frame_manager.game_manager.time, "intensity":self.environment.sunlight_intensity})
             self.sunlight_last_update = self.environment.frame_manager.game_manager.time
 
+        alert = False
+        
         if self.soil_moisture < self.info["moisture_low"] or self.soil_moisture > self.info["moisture_high"]:
-            self.alert_show("moisture")
             self.out_of_range += 1
-        elif self.environment.temperature < self.info["temperature_low"] or self.environment.temperature > self.info["temperature_high"]:
-            self.alert_show("temperature")
+            self.show_info_warning("moisture")        
+            alert = True
+        else:
+            self.destroy_info_warning("moisture")
+            alert = False
+
+        if self.environment.temperature < self.info["temperature_low"] or self.environment.temperature > self.info["temperature_high"]:            
             self.out_of_range += 1
-        elif self.environment.humidity < self.info["humidity_low"] or self.environment.humidity > self.info["humidity_high"]:
-            self.alert_show("humidity")
+            self.show_info_warning("temperature")   
+            alert = True
+        else:
+            self.destroy_info_warning("temperature")
+            alert = False
+
+        if self.environment.humidity < self.info["humidity_low"] or self.environment.humidity > self.info["humidity_high"]:            
             self.out_of_range += 1
-        elif self.environment.sunlight_intensity != self.info["sunlight_intensity"]:
-            self.alert_show("sunlight")
+            self.show_info_warning("humidity")   
+            alert = True
+        else:
+            self.destroy_info_warning("humidity")
+            alert = False
+
+        if self.environment.sunlight_intensity != self.info["sunlight_intensity"]:
             self.out_of_range += 1
-        else: 
+            self.show_info_warning("sunlight")   
+            alert = True
+        else:
+            self.destroy_info_warning("sunlight")
+            alert = False
+
+
+        if alert == False:
             self.alert_hide()
-            self.out_of_range = 0
+            self.out_of_range = 0   
+        else:
+            self.alert_show()
 
         try:
             hours, intensity = self.get_sunlight()
-            self.canvas_plant_info.itemconfig(self.soil_moisture_text, text=str(round(self.soil_moisture))+"%")
-            self.canvas_plant_info.itemconfig(self.sunlight_text, text=str(hours)+" hours \n" + intensity + " sunlight")
-            self.canvas_plant_info.itemconfig(self.humidity_text, text=str(self.environment.humidity)+"%")
-            self.canvas_plant_info.itemconfig(self.temperature_text, text=str(self.environment.temperature)+"°C")
+            self.canvas_plant_info.itemconfig(self.soil_moisture_text, text="Soil Moisture "+ str(round(self.soil_moisture))+"%")
+            self.canvas_plant_info.itemconfig(self.sunlight_text, text=intensity + " sunlight for " + str(hours)+" hrs")
+            self.canvas_plant_info.itemconfig(self.humidity_text, text="Humidity " + str(self.environment.humidity)+"%")
+            self.canvas_plant_info.itemconfig(self.temperature_text, text="Temperature " + str(self.environment.temperature)+"°C")
         except:
             pass
 
@@ -373,7 +437,7 @@ class navbar():
         container.place(anchor="n")
 
         Button(self.frame, text ="Bathroom", command = self.bathroom_button).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width/2, y=15)
-        Button(self.frame, text ="Menu", command = self.menu_button).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width, y=15)
+        Button(self.frame, text ="Exit to Menu", command = self.menu_button).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width, y=15)
 
     def bathroom_button(self):
         self.parent_frame.frame_manager.bathroom.show()
