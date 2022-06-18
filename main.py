@@ -140,35 +140,36 @@ class plant():
         self.humidity_warning = None
         self.temperature_warning = None
 
-    def draw(self):
+        self.alert_canvas = None
+
+    def draw(self, x, y):
+        self.x = x
+        self.y = y
         img = ImageTk.PhotoImage(Image.open('assets/'+self.info["image"]).resize((100, 100), Image.Resampling.LANCZOS))
-        created = self.environment.canvas.create_image(200, 325, image=img, anchor=NW)
+        created = self.environment.canvas.create_image(self.x, self.y, image=img, anchor=NW)
         self.environment.canvas.tag_bind(created, '<ButtonPress-1>', self.clicked) 
         created.tkraise()            
         
-    def alert_show(self, location=None):
-        try:
-            if self.environment.frame_manager.active_frame == self.environment and self.info_displayed == False:
+    def alert_show(self):
+        if self.environment.frame_manager.active_frame == self.environment and self.info_displayed == False:
+            if self.alert_canvas == None:
                 img = ImageTk.PhotoImage(Image.open('assets/!.png').resize((25, 25), Image.Resampling.LANCZOS))
                 self.alert_canvas = Canvas(self.environment.frame_manager.game_manager.frame, width=25, height=25, bg="red", bd=0, highlightthickness=0, relief='ridge')
                 self.alert_canvas.background = img 
                 self.alert_canvas.create_image(0, 0, anchor=NW, image=img)
-                self.alert_canvas.place(anchor="e", x=280, y=350) 
-            else:
-                self.alert_hide()
-        except Exception as e:
-            print(e)
+                self.alert_canvas.place(anchor="e", x=self.x+90, y=self.y+40) 
+        else:
+            self.alert_hide()
 
     def alert_hide(self):
-        try:
+        if self.alert_canvas != None:
             self.alert_canvas.destroy()
-        except:
-            pass
+            self.alert_canvas = None
 
     def clicked(self, event):
         self.info_displayed = True
         self.canvas_plant_info = Canvas(self.environment.frame_manager.game_manager.frame, width=290, height=155, bg="#262626", relief="ridge", bd=0, highlightthickness=0)
-        self.canvas_plant_info.place(anchor="e", x=400, y=320)        
+        self.canvas_plant_info.place(anchor="e", x=self.x+190, y=self.y-30)        
         self.canvas_plant_info.create_rectangle(0,30,145,80, fill="white")
         self.canvas_plant_info.create_rectangle(145,30,290,80, fill="white")
         self.canvas_plant_info.create_rectangle(0,80,145,130, fill="white")
@@ -178,7 +179,7 @@ class plant():
         self.sunlight_text = self.canvas_plant_info.create_text(150, 30, font='Helvetica 8 bold', anchor=NW, text=self.environment.sunlight_intensity + " sunlight for " + str(self.environment.sunlight_hours)+" hrs")
         self.humidity_text = self.canvas_plant_info.create_text(5, 80, font='Helvetica 8 bold', anchor=NW, text="Humidity " + str(self.environment.humidity)+"%")
         self.temperature_text = self.canvas_plant_info.create_text(150, 80, font='Helvetica 8 bold', anchor=NW, text="Temperature " + str(self.environment.temperature)+"°C")
-        button(self.canvas_plant_info, text="X", command=self.close, padx=6).place(x=265, y=0)
+        button(self.canvas_plant_info, text="X", command=self.close, padx=6).place(x=264, y=0)
 
         self.canvas_plant_info.create_text(5, 45, anchor=NW, text="Recommended\n"+str(self.info["moisture_low"])+"-"+str(self.info["moisture_high"])+"%")
         self.canvas_plant_info.create_text(150, 45, anchor=NW, text="Recommended\n" + self.info["sunlight_intensity"] + " for " + str(self.info["sunlight_hours"])+" hrs")
@@ -253,7 +254,6 @@ class plant():
             alert = True
         else:
             self.destroy_info_warning("moisture")
-            alert = False
 
         if self.environment.temperature < self.info["temperature_low"] or self.environment.temperature > self.info["temperature_high"]:            
             self.out_of_range += 1
@@ -261,7 +261,6 @@ class plant():
             alert = True
         else:
             self.destroy_info_warning("temperature")
-            alert = False
 
         if self.environment.humidity < self.info["humidity_low"] or self.environment.humidity > self.info["humidity_high"]:            
             self.out_of_range += 1
@@ -269,7 +268,6 @@ class plant():
             alert = True
         else:
             self.destroy_info_warning("humidity")
-            alert = False
 
         if self.environment.sunlight_intensity != self.info["sunlight_intensity"]:
             self.out_of_range += 1
@@ -277,7 +275,6 @@ class plant():
             alert = True
         else:
             self.destroy_info_warning("sunlight")
-            alert = False
 
 
         if alert == False:
@@ -309,6 +306,7 @@ class bathroom():
         self.humidity = random.randint(70,95)
         self.sunlight_intensity = "indirect"
         self.sunlight_hours = 7
+        self.spawn_locations = [{"x":200, "y":325}, {"x":500, "y":325}]
 
     def show(self):
         self.frame_manager.clear()
@@ -323,8 +321,13 @@ class bathroom():
         bg = self.canvas.create_image(0, 0, anchor=NW, image=img)
         navbar(self, self.frame)
 
+        
+        location = random.choice(self.spawn_locations)
+        x = location["x"]
+        y = location["y"]
+
         for plant in self.plants:
-            plant.draw()
+            plant.draw(x, y)
 
 class button(Button):
     def __init__(self, parent, padx=None, pady=None, *args, **kwargs):
