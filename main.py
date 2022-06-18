@@ -25,7 +25,7 @@ class GameManager():
         self.frame_manager = frameManager(self)      
         self.plant_manager = plantManager(self)
         self.plant_manager.spawn(self.frame_manager.bathroom)
-        #self.root.bind('<Motion>', self.motion)
+        self.root.bind('<Motion>', self.motion)
         self.main_loop()
 
     def motion(self,event):
@@ -87,7 +87,8 @@ class frameManager():
     def __init__(self, game_manager):
         self.game_manager = game_manager
         self.menu = menu(self)
-        self.bathroom = bathroom(self)
+        self.bathroom = environment("Bathroom", self, [{"x":250, "y":375, "size":100}, {"x":733, "y":490, "size":200}, {"x":167, "y":545, "size":100}],
+        7,"indirect",random.randint(70,90),random.randint(15,25))
         self.menu.show()
         self.active_frame = None;
 
@@ -100,22 +101,48 @@ class plantManager():
         self.game_manager = game_manager 
         self.enviros = [self.game_manager.frame_manager.bathroom]
         self.plants = []
+        self.spawner = False
+        self.last_spawned = 0
 
     def spawn(self, environment=None):
         if environment is None:
             environment = random.choice(self.enviros)
-        plant(environment, self)
+
+        if len(environment.spawn_locations) != 0:
+            random_index = random.randint(0, len(environment.spawn_locations)-1)
+            location = environment.spawn_locations[random_index]
+            x = location["x"]
+            y = location["y"]
+            size = location["size"]
+
+            environment.spawn_locations.pop(random_index)
+
+            temp = plant(environment, self, x, y, size)
+
+            self.last_spawned = 0
+            print("Spawned")
+
+
+            if environment == self.game_manager.frame_manager.active_frame:
+                temp.draw()
     
     def update(self):
+        self.last_spawned += 1
+        if self.plants[0].alert == False and len(self.plants) == 1 and self.last_spawned > 10:
+            self.spawner = True        
+        
         for plant in self.plants:
             plant.update()
+
+        if self.spawner and self.last_spawned > 60:
+            self.spawn()
 
 #
 # Manager subclasses
 #
 
 class plant():
-    def __init__(self, environment, plant_manager):
+    def __init__(self, environment, plant_manager, x, y, size=100):
         plants = [{"name": "plant1", "image": "Plant-image.webp", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}, 
             {"name": "plant2", "image": "plant.png", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}, 
             {"name": "plant3", "image": "plant.png", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}]
@@ -140,15 +167,19 @@ class plant():
         self.humidity_warning = None
         self.temperature_warning = None
 
+        self.alert = False
+
         self.alert_canvas = None
 
-    def draw(self, x, y):
+        self.size = size
+
         self.x = x
         self.y = y
-        img = ImageTk.PhotoImage(Image.open('assets/'+self.info["image"]).resize((100, 100), Image.Resampling.LANCZOS))
-        created = self.environment.canvas.create_image(self.x, self.y, image=img, anchor=NW)
-        self.environment.canvas.tag_bind(created, '<ButtonPress-1>', self.clicked) 
-        created.tkraise()            
+
+    def draw(self):        
+        self.img = ImageTk.PhotoImage(Image.open('assets/'+self.info["image"]).resize((self.size, self.size), Image.Resampling.LANCZOS))
+        created = self.environment.canvas.create_image(self.x, self.y, image=self.img)
+        self.environment.canvas.tag_bind(created, '<ButtonPress-1>', self.clicked)           
         
     def alert_show(self):
         if self.environment.frame_manager.active_frame == self.environment and self.info_displayed == False:
@@ -157,7 +188,7 @@ class plant():
                 self.alert_canvas = Canvas(self.environment.frame_manager.game_manager.frame, width=25, height=25, bg="red", bd=0, highlightthickness=0, relief='ridge')
                 self.alert_canvas.background = img 
                 self.alert_canvas.create_image(0, 0, anchor=NW, image=img)
-                self.alert_canvas.place(anchor="e", x=self.x+90, y=self.y+40) 
+                self.alert_canvas.place(anchor="e", x=self.x+40, y=self.y-10) 
         else:
             self.alert_hide()
 
@@ -169,7 +200,7 @@ class plant():
     def clicked(self, event):
         self.info_displayed = True
         self.canvas_plant_info = Canvas(self.environment.frame_manager.game_manager.frame, width=290, height=155, bg="#262626", relief="ridge", bd=0, highlightthickness=0)
-        self.canvas_plant_info.place(anchor="e", x=self.x+190, y=self.y-30)        
+        self.canvas_plant_info.place(anchor="e", x=self.x+150, y=self.y-80)        
         self.canvas_plant_info.create_rectangle(0,30,145,80, fill="white")
         self.canvas_plant_info.create_rectangle(145,30,290,80, fill="white")
         self.canvas_plant_info.create_rectangle(0,80,145,130, fill="white")
@@ -235,7 +266,8 @@ class plant():
         print("move")
 
     def die(self):
-        print("plant deadd")
+        #print("plant deadd")
+        pass
 
     def close(self):
         self.canvas_plant_info.destroy()
@@ -246,38 +278,37 @@ class plant():
         if self.soil_moisture > 0:
             self.soil_moisture = self.soil_moisture - self.moisture_rate
 
-        alert = False
+        self.alert = False
         
         if self.soil_moisture < self.info["moisture_low"] or self.soil_moisture > self.info["moisture_high"]:
             self.out_of_range += 1
             self.show_info_warning("moisture")        
-            alert = True
+            self.alert = True
         else:
             self.destroy_info_warning("moisture")
 
         if self.environment.temperature < self.info["temperature_low"] or self.environment.temperature > self.info["temperature_high"]:            
             self.out_of_range += 1
             self.show_info_warning("temperature")   
-            alert = True
+            self.alert = True
         else:
             self.destroy_info_warning("temperature")
 
         if self.environment.humidity < self.info["humidity_low"] or self.environment.humidity > self.info["humidity_high"]:            
             self.out_of_range += 1
             self.show_info_warning("humidity")   
-            alert = True
+            self.alert = True
         else:
             self.destroy_info_warning("humidity")
 
         if self.environment.sunlight_intensity != self.info["sunlight_intensity"]:
             self.out_of_range += 1
             self.show_info_warning("sunlight")   
-            alert = True
+            self.alert = True
         else:
             self.destroy_info_warning("sunlight")
 
-
-        if alert == False:
+        if self.alert == False:
             self.alert_hide()
             self.out_of_range = 0   
         else:
@@ -296,38 +327,34 @@ class plant():
             self.die()
 
 # Frame sub class
-class bathroom():
-    def __init__(self, frame_manager):
+class environment():
+    def __init__(self, name, frame_manager, spawn_locations, sunlights_hours, sunlight_intensity, humidity, temperature):
         self.frame_manager = frame_manager
         self.frame = frame_manager.game_manager.frame
         self.plants = []
         self.canvas = None
-        self.temperature = random.randint(15,25)
-        self.humidity = random.randint(70,95)
-        self.sunlight_intensity = "indirect"
-        self.sunlight_hours = 7
-        self.spawn_locations = [{"x":200, "y":325}, {"x":500, "y":325}]
+        self.temperature = temperature
+        self.humidity = humidity
+        self.sunlight_intensity = sunlight_intensity
+        self.sunlight_hours = sunlights_hours
+        self.spawn_locations = spawn_locations
+        self.name = name
 
     def show(self):
         self.frame_manager.clear()
         self.frame_manager.active_frame = self
         self.frame.configure(background='white')
-        self.frame_manager.game_manager.root.title("Bathroom")
+        self.frame_manager.game_manager.root.title(self.name)
         self.canvas = Canvas(self.frame, width=self.frame_manager.game_manager.width, height=self.frame_manager.game_manager.height)
         self.canvas.pack()       
 
-        img = ImageTk.PhotoImage(Image.open('assets/bathroom.jpg').resize((self.frame_manager.game_manager.width, self.frame_manager.game_manager.height), Image.Resampling.LANCZOS))
+        img = ImageTk.PhotoImage(Image.open('assets/'+self.name+'.jpg').resize((self.frame_manager.game_manager.width, self.frame_manager.game_manager.height), Image.Resampling.LANCZOS))
         self.canvas.background = img  # Keep a reference in case this code is put in a function.
         bg = self.canvas.create_image(0, 0, anchor=NW, image=img)
         navbar(self, self.frame)
 
-        
-        location = random.choice(self.spawn_locations)
-        x = location["x"]
-        y = location["y"]
-
         for plant in self.plants:
-            plant.draw(x, y)
+            plant.draw()
 
 class button(Button):
     def __init__(self, parent, padx=None, pady=None, *args, **kwargs):
