@@ -75,7 +75,8 @@ class GameManager():
                     self.frame_manager.active_frame.canvas.delete(self.update_text)
                 except:
                     pass
-                self.update_text = self.frame_manager.active_frame.canvas.create_text(10, 10, anchor=NW, text=time_formatted)
+                self.update_text = self.frame_manager.active_frame.canvas.create_text(10, 10, anchor=NW, text=time_formatted, font="Poppins 8")
+    
             except:
                 pass
 
@@ -113,6 +114,9 @@ class frameManager():
     def clear(self):
         for widgets in self.game_manager.frame.winfo_children():
             widgets.destroy()
+
+    def show_instructions(self):
+        instructions(self).show()
             
 class plantManager():
     def __init__(self, game_manager):
@@ -153,7 +157,6 @@ class plantManager():
             temp = plant(environment, self, info, x, y, size)
 
             self.last_spawned = 0
-            print("Spawned")
 
             if environment == self.game_manager.frame_manager.active_frame:
                 temp.draw()
@@ -226,36 +229,39 @@ class plant():
             self.alert_canvas = None
 
     def clicked(self, event):
-        self.info_displayed = True
-        self.canvas_plant_info = Canvas(self.environment.frame_manager.game_manager.frame, width=290, height=155, bg="#262626", relief="ridge", bd=0, highlightthickness=0)
-        self.canvas_plant_info.place(anchor="e", x=self.x+150, y=self.y-80)        
-        self.canvas_plant_info.create_rectangle(0,30,145,80, fill="white")
-        self.canvas_plant_info.create_rectangle(145,30,290,80, fill="white")
-        self.canvas_plant_info.create_rectangle(0,80,145,130, fill="white")
-        self.canvas_plant_info.create_rectangle(145,80,290,130, fill="white")
-        self.canvas_plant_info.create_text(5, 0, anchor=NW, text=self.info["name"], fill="white")
-        self.soil_moisture_text = self.canvas_plant_info.create_text(5, 30, font='Helvetica 8 bold', anchor=NW, text="Soil Moisture "+ str(round(self.soil_moisture))+"%")
-        self.sunlight_text = self.canvas_plant_info.create_text(150, 30, font='Helvetica 8 bold', anchor=NW, text=self.environment.sunlight_intensity + " sunlight for " + str(self.environment.sunlight_hours)+" hrs")
-        self.humidity_text = self.canvas_plant_info.create_text(5, 80, font='Helvetica 8 bold', anchor=NW, text="Humidity " + str(self.environment.humidity)+"%")
-        self.temperature_text = self.canvas_plant_info.create_text(150, 80, font='Helvetica 8 bold', anchor=NW, text="Temperature " + str(self.environment.temperature)+"°C")
-        button(self.canvas_plant_info, text="X", command=self.close, padx=6).place(x=264, y=0)
+        if self.info_displayed == False:
+            self.info_displayed = True
+            self.canvas_plant_info = Canvas(self.environment.frame_manager.game_manager.frame, width=290, height=155, bg="#262626", relief="ridge", bd=0, highlightthickness=0)
+            self.canvas_plant_info.place(anchor="e", x=self.x+150, y=self.y-80)        
+            self.canvas_plant_info.create_rectangle(0,30,145,80, fill="white")
+            self.canvas_plant_info.create_rectangle(145,30,290,80, fill="white")
+            self.canvas_plant_info.create_rectangle(0,80,145,130, fill="white")
+            self.canvas_plant_info.create_rectangle(145,80,290,130, fill="white")
+            self.canvas_plant_info.create_text(5, 0, anchor=NW, text=self.info["name"], fill="white", font="Poppins 8")
+            self.soil_moisture_text = self.canvas_plant_info.create_text(5, 30, font='Poppins 8 bold', anchor=NW, text="Soil Moisture "+ str(round(self.soil_moisture))+"%")
+            self.sunlight_text = self.canvas_plant_info.create_text(150, 30, font='Poppins 8 bold', anchor=NW, text=self.environment.sunlight_intensity.capitalize() + " sunlight for " + str(self.environment.sunlight_hours)+" hrs")
+            self.humidity_text = self.canvas_plant_info.create_text(5, 80, font='Poppins 8 bold', anchor=NW, text="Humidity " + str(self.environment.humidity)+"%")
+            self.temperature_text = self.canvas_plant_info.create_text(150, 80, font='Poppins 8 bold', anchor=NW, text="Temperature " + str(self.environment.temperature)+"°C")
+            button(self.canvas_plant_info, text="X", command=self.close, padx=6).place(x=264, y=0)
 
-        self.canvas_plant_info.create_text(5, 45, anchor=NW, text="Required\n"+str(self.info["moisture_low"])+"-"+str(self.info["moisture_high"])+"%")
-        self.canvas_plant_info.create_text(150, 45, anchor=NW, text="Required\n" + self.info["sunlight_intensity"] + " for " + str(self.info["sunlight_hours"])+" hrs")
-        self.canvas_plant_info.create_text(5, 95, anchor=NW, text="Required\n" + str(self.info["humidity_low"])+"-"+str(self.info["humidity_high"])+"%")
-        self.canvas_plant_info.create_text(150, 95, anchor=NW, text="Required\n"+ str(self.info["temperature_low"])+"-"+str(self.info["temperature_high"])+"°C")
+            self.canvas_plant_info.create_text(5, 45, anchor=NW, text="Requires:\n"+str(self.info["moisture_low"])+"-"+str(self.info["moisture_high"])+"%", font="Poppins 8")
+            self.canvas_plant_info.create_text(150, 45, anchor=NW, text="Requires:\n" + self.info["sunlight_intensity"].capitalize() + " for " + str(self.info["sunlight_hours"])+" hrs", font="Poppins 8")
+            self.canvas_plant_info.create_text(5, 95, anchor=NW, text="Requires:\n" + str(self.info["humidity_low"])+"-"+str(self.info["humidity_high"])+"%", font="Poppins 8")
+            self.canvas_plant_info.create_text(150, 95, anchor=NW, text="Requires:\n"+ str(self.info["temperature_low"])+"-"+str(self.info["temperature_high"])+"°C", font="Poppins 8")
 
-        button(self.canvas_plant_info, text="Move", command=self.move_menu_open, padx=2).place(x=0, y=130)
-        button(self.canvas_plant_info, text="Water", command=self.water, padx=2).place(x=45, y=130)
+            button(self.canvas_plant_info, text="Move", command=self.move_menu_open, padx=2).place(x=0, y=130)
+            button(self.canvas_plant_info, text="Water", command=self.water, padx=2).place(x=45, y=130)
 
     def create_info_warning(self, x, y):
-        if self.canvas_plant_info:
+        try:
             img = ImageTk.PhotoImage(Image.open('assets/!.png').resize((25, 25), Image.Resampling.LANCZOS))
             temp = Canvas(self.canvas_plant_info, width=25, height=25, bg="red", bd=0, highlightthickness=0, relief='ridge')
             temp.background = img 
             temp.create_image(0, 0, anchor=NW, image=img)
             temp.place(anchor="e", x=x, y=y) 
             return(temp)
+        except:
+            pass
 
     def destroy_info_warning(self, name):
         if name == "moisture" and self.moisture_warning != None:            
@@ -288,7 +294,6 @@ class plant():
             self.destroy_info_warning("humidity")
 
     def water(self):
-        print("water")
         self.soil_moisture = 75
 
     def move_menu_open(self):
@@ -296,7 +301,7 @@ class plant():
         self.info_displayed = True
         self.canvas_move_menu = Canvas(self.environment.frame_manager.game_manager.frame, width=210, height=60, bg="#262626", relief="ridge", bd=0, highlightthickness=0)
         self.canvas_move_menu.place(anchor="e", x=self.x+110, y=self.y-32)        
-        self.canvas_move_menu.create_text(5, 0, anchor=NW, text="Move to:", fill="white")
+        self.canvas_move_menu.create_text(5, 0, anchor=NW, text="Move to:", fill="white", font="Poppins 8")
         button(self.canvas_move_menu, text="X", command=self.move_menu_close, padx=4, pady=0).place(x=188, y=0)
         button(self.canvas_move_menu, text="Bathroom", command=self.move_bathroom, padx=2).place(x=0, y=30)
         button(self.canvas_move_menu, text="Garden", command=self.move_garden, padx=2).place(x=65, y=30)
@@ -323,9 +328,19 @@ class plant():
         self.move(self.plant_manager.game_manager.frame_manager.window)
 
     def move(self, environment):
-        random_index = random.randint(0, len(environment.spawn_locations)-1)
+        if environment == self.environment:
+            return
+        if len(environment.spawn_locations) == 1:
+            random_index = 0
+        elif len(environment.spawn_locations) > 1:
+            random_index = random.randint(0, len(environment.spawn_locations)-1)
+        else:
+            return
         location = environment.spawn_locations[random_index]
         environment.spawn_locations.pop(random_index)
+
+        self.environment.spawn_locations.append({"x":self.x, "y":self.y, "size":self.size})
+
         x = location["x"]
         y = location["y"]
         size = location["size"]
@@ -385,7 +400,7 @@ class plant():
 
         try:
             self.canvas_plant_info.itemconfig(self.soil_moisture_text, text="Soil Moisture "+ str(round(self.soil_moisture))+"%")
-            self.canvas_plant_info.itemconfig(self.sunlight_text, text=self.environment.sunlight_intensity + " sunlight for " + str(self.environment.sunlight_hours)+" hrs")
+            self.canvas_plant_info.itemconfig(self.sunlight_text, text=self.environment.sunlight_intensity.capitalize() + " sunlight for " + str(self.environment.sunlight_hours)+" hrs")
             self.canvas_plant_info.itemconfig(self.humidity_text, text="Humidity " + str(self.environment.humidity)+"%")
             self.canvas_plant_info.itemconfig(self.temperature_text, text="Temperature " + str(self.environment.temperature)+"°C")
         except:
@@ -430,9 +445,9 @@ class button(Button):
         if padx == None:
             padx = 20
         if pady == None:
-            pady = 2
+            pady = -1
 
-        Button.__init__(self, parent, borderwidth=1, relief='solid', bg="#6bb846", padx=padx, pady=pady,  *args, **kwargs)
+        Button.__init__(self, parent, borderwidth=1, relief='solid', bg="#6bb846", padx=padx, pady=pady, font="Poppins 8",  *args, **kwargs)
 
         self.pack(padx=15, pady=5)
         
@@ -459,9 +474,42 @@ class menu():
         label.image=logo 
         label.pack()
 
-        button(container, text="Play", command=lambda: self.frame_manager.game_manager.start())
-        button(container, text="Instructions", command=lambda: plantManager())
-        button(container, text="Exit", command=lambda: self.frame_manager.game_manager.destroy())
+        button(container, text="Play", command=self.frame_manager.game_manager.start)
+        button(container, text="Instructions", command=self.frame_manager.show_instructions)
+        button(container, text="Exit", command=self.frame_manager.game_manager.destroy)
+
+        copyright = Label(self.frame, text="Copyright EzSoil 2022", background="white", font="Poppins 8")
+        copyright.place(x = 20, y = self.frame_manager.game_manager.height-20, anchor = 'sw')
+
+class instructions():
+    def __init__(self, frame_manager):
+        self.frame_manager = frame_manager
+        self.frame = frame_manager.game_manager.frame
+
+    def show(self):
+        self.frame_manager.clear()
+        self.frame.configure(background='white')
+        self.frame_manager.game_manager.root.title("Instructions")
+        self.frame_manager.active_frame = self
+
+        container = Frame(self.frame, background = "white")
+        container.place(anchor="center", relx=0.5, rely=0.6, height=500, width=800)
+
+        image1 = Image.open("assets/logo.png")
+        pixels_x, pixels_y = tuple([int(0.4 * x)  for x in image1.size])
+        image1 = image1.resize((pixels_x, pixels_y))
+        logo = ImageTk.PhotoImage(image1)
+        label = Label(container, image=logo, background="white")
+        label.image=logo 
+        label.pack()
+
+        t = Text(container, background="white", height=12, width=52, wrap=WORD, font="Poppins 8")
+        t.pack()
+
+        t.insert(END, "Welcome to the EzSoil game!\nThe purpose of this game is to show you how Sprout can help monitor plant health.\n\nWhen you play, click on plants to see their health status and requirements. From that menu you can water or move the plants to a better climate. \nOn the top of your screen you will see the different environments (click to go to different environment), including how many plants are at each locations, and how many need tending to. \n\n There is no time limit, and the plants will not die.")
+        t.config(state=DISABLED)
+
+        button(container, text="Back", command=self.frame_manager.menu.show)
 
         copyright = Label(self.frame, text="Copyright EzSoil 2022", background="white")
         copyright.place(x = 20, y = self.frame_manager.game_manager.height-20, anchor = 'sw')
@@ -499,8 +547,8 @@ class navbar():
                 if plant.alert:
                     no_alerts += 1
                 
-            Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.offset, y=30) 
-            Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.offset-80, y=30) 
+            Label(self.frame, text=str(no_alerts), background="red", padx=5, font="Poppins 8").place(anchor="e", x=self.offset, y=30) 
+            Label(self.frame, text=str(no_plants), background="white", padx=5, font="Poppins 8").place(anchor="e", x=self.offset-83, y=30) 
 
             no_alerts = 0
             no_plants = len(self.parent_frame.frame_manager.garden.plants)
@@ -508,8 +556,8 @@ class navbar():
                 if plant.alert:
                     no_alerts += 1
                 
-            Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.offset+90, y=30) 
-            Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.offset+25, y=30) 
+            Label(self.frame, text=str(no_alerts), background="red", padx=5, font="Poppins 8").place(anchor="e", x=self.offset+90, y=30) 
+            Label(self.frame, text=str(no_plants), background="white", padx=5, font="Poppins 8").place(anchor="e", x=self.offset+23, y=30) 
 
             no_alerts = 0
             no_plants = len(self.parent_frame.frame_manager.shelf.plants)
@@ -517,8 +565,8 @@ class navbar():
                 if plant.alert:
                     no_alerts += 1
                 
-            Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.offset+167, y=30) 
-            Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.offset+114, y=30) 
+            Label(self.frame, text=str(no_alerts), background="red", padx=5, font="Poppins 8").place(anchor="e", x=self.offset+167, y=30) 
+            Label(self.frame, text=str(no_plants), background="white", padx=5, font="Poppins 8").place(anchor="e", x=self.offset+114, y=30) 
 
             no_alerts = 0
             no_plants = len(self.parent_frame.frame_manager.window.plants)
@@ -526,8 +574,8 @@ class navbar():
                 if plant.alert:
                     no_alerts += 1
                 
-            Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.offset+262, y=30) 
-            Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.offset+191, y=30) 
+            Label(self.frame, text=str(no_alerts), background="red", padx=5, font="Poppins 8").place(anchor="e", x=self.offset+262, y=30) 
+            Label(self.frame, text=str(no_plants), background="white", padx=5, font="Poppins 8").place(anchor="e", x=self.offset+191, y=30) 
         except:
             pass
 
