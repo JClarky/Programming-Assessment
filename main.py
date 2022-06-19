@@ -25,7 +25,7 @@ class GameManager():
         self.frame_manager = frameManager(self)      
         self.plant_manager = plantManager(self)
         self.plant_manager.spawn(self.frame_manager.bathroom)
-        self.root.bind('<Motion>', self.motion)
+        #self.root.bind('<Motion>', self.motion)
         self.main_loop()
 
     def motion(self,event):
@@ -37,7 +37,11 @@ class GameManager():
         self.root.destroy()
         sys.exit()     
 
+    def stop(self):
+        self.run = False
+        
     def start(self):
+        self.run = True
         Thread(target=self.clock).start()
         self.frame_manager.bathroom.show()
 
@@ -83,7 +87,7 @@ class GameManager():
             if 'normal' != self.root.state():
                 self.destroy()
                 
-            time.sleep(0.005)
+            time.sleep(0.1)
        
 # Frame manager
 class frameManager():
@@ -121,6 +125,8 @@ class plantManager():
     def spawn(self, environment=None):
         if environment is None:
             environment = random.choice(self.enviros)
+            if environment.max_spawned <= len(environment.plants):
+                return
 
         if len(environment.spawn_locations) != 0:
             random_index = random.randint(0, len(environment.spawn_locations)-1)
@@ -135,7 +141,6 @@ class plantManager():
 
             self.last_spawned = 0
             print("Spawned")
-
 
             if environment == self.game_manager.frame_manager.active_frame:
                 temp.draw()
@@ -157,9 +162,10 @@ class plantManager():
 
 class plant():
     def __init__(self, environment, plant_manager, x, y, size=100):
-        plants = [{"name": "plant1", "image": "Plant-image.webp", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}, 
-            {"name": "plant2", "image": "plant.png", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}, 
-            {"name": "plant3", "image": "plant.png", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}]
+        plants = [{"name": "plant1", "image": "plant.png", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}, 
+            {"name": "plant2", "image": "plant2.png", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}, 
+            {"name": "plant3", "image": "plant3.png", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90},
+            {"name": "plant3", "image": "plant4.png", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}]
 
         self.environment = environment
         self.plant_manager = plant_manager
@@ -354,6 +360,7 @@ class environment():
         self.sunlight_hours = sunlights_hours
         self.spawn_locations = spawn_locations
         self.name = name
+        self.max_spawned = len(spawn_locations)-1
 
     def show(self):
         self.frame_manager.clear()
@@ -433,44 +440,49 @@ class navbar():
         button(self.frame, text ="Garden", command = self.parent_frame.frame_manager.garden.show).place(anchor="e", x=self.offset+90, y=15)
         button(self.frame, text ="Shelf", command = self.parent_frame.frame_manager.shelf.show).place(anchor="e", x=self.offset+167, y=15)
         button(self.frame, text ="Window", command = self.parent_frame.frame_manager.window.show).place(anchor="e", x=self.offset+262, y=15)
-        button(self.frame, text ="Exit to Menu", command = self.parent_frame.frame_manager.menu.show).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width, y=15)
+        button(self.frame, text ="Exit to Menu", command = self.exit_button).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width, y=15)
+
+    def exit_button(self):
+        self.parent_frame.frame_manager.game_manager.stop()
+        self.parent_frame.frame_manager.menu.show()
 
     def update(self):
-        no_alerts = 0
-        no_plants = len(self.parent_frame.frame_manager.bathroom.plants)
-        for plant in self.parent_frame.frame_manager.bathroom.plants:
-            if plant.alert:
-                no_alerts += 1
-            
-        Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.offset, y=30) 
-        Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.offset-80, y=30) 
+        if self.frame:
+            no_alerts = 0
+            no_plants = len(self.parent_frame.frame_manager.bathroom.plants)
+            for plant in self.parent_frame.frame_manager.bathroom.plants:
+                if plant.alert:
+                    no_alerts += 1
+                
+            Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.offset, y=30) 
+            Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.offset-80, y=30) 
 
-        no_alerts = 0
-        no_plants = len(self.parent_frame.frame_manager.garden.plants)
-        for plant in self.parent_frame.frame_manager.garden.plants:
-            if plant.alert:
-                no_alerts += 1
-            
-        Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.offset+90, y=30) 
-        Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.offset+25, y=30) 
+            no_alerts = 0
+            no_plants = len(self.parent_frame.frame_manager.garden.plants)
+            for plant in self.parent_frame.frame_manager.garden.plants:
+                if plant.alert:
+                    no_alerts += 1
+                
+            Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.offset+90, y=30) 
+            Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.offset+25, y=30) 
 
-        no_alerts = 0
-        no_plants = len(self.parent_frame.frame_manager.shelf.plants)
-        for plant in self.parent_frame.frame_manager.shelf.plants:
-            if plant.alert:
-                no_alerts += 1
-            
-        Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.offset+167, y=30) 
-        Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.offset+114, y=30) 
+            no_alerts = 0
+            no_plants = len(self.parent_frame.frame_manager.shelf.plants)
+            for plant in self.parent_frame.frame_manager.shelf.plants:
+                if plant.alert:
+                    no_alerts += 1
+                
+            Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.offset+167, y=30) 
+            Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.offset+114, y=30) 
 
-        no_alerts = 0
-        no_plants = len(self.parent_frame.frame_manager.window.plants)
-        for plant in self.parent_frame.frame_manager.window.plants:
-            if plant.alert:
-                no_alerts += 1
-            
-        Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.offset+262, y=30) 
-        Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.offset+191, y=30) 
+            no_alerts = 0
+            no_plants = len(self.parent_frame.frame_manager.window.plants)
+            for plant in self.parent_frame.frame_manager.window.plants:
+                if plant.alert:
+                    no_alerts += 1
+                
+            Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.offset+262, y=30) 
+            Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.offset+191, y=30) 
 
 if __name__ == '__main__':
     GameManager()
