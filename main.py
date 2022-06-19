@@ -116,6 +116,13 @@ class frameManager():
             
 class plantManager():
     def __init__(self, game_manager):
+        self.plants_info = [{"name": "Wavy Green", "image": "plant.png", "moisture_rate": 0.1, "moisture_low":50, "moisture_high":80, "sunlight_hours":4, "sunlight_intensity":"low", "temperature_low":15, "temperature_high":25, "humidity_low":75, "humidity_high":90},  # bathroom
+            {"name": "Pointy Tropics", "image": "plant2.png", "moisture_rate": 0.3, "moisture_low":60, "moisture_high":90, "sunlight_hours":8, "sunlight_intensity":"direct", "temperature_low":15, "temperature_high":30, "humidity_low":60, "humidity_high":80}, #garden
+            {"name": "Red Flowers", "image": "plant3.png", "moisture_rate": 0.2, "moisture_low":60, "moisture_high":80, "sunlight_hours":7, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":80}, #window sill
+            {"name": "Angry Goose", "image": "plant4.png", "moisture_rate": 0.2, "moisture_low":30, "moisture_high":90, "sunlight_hours":4, "sunlight_intensity":"low", "temperature_low":10, "temperature_high":20, "humidity_low":60, "humidity_high":70}] # shelf
+
+        self.plants_spawned = [0,0,0,0]
+
         self.game_manager = game_manager 
         self.enviros = [self.game_manager.frame_manager.bathroom, self.game_manager.frame_manager.garden, self.game_manager.frame_manager.shelf, self.game_manager.frame_manager.window]
         self.plants = []
@@ -129,6 +136,12 @@ class plantManager():
                 return
 
         if len(environment.spawn_locations) != 0:
+            random_index = random.randint(0, 3)
+            if self.plants_spawned[random_index] == 3:
+                return
+            info = self.plants_info[random_index]
+            self.plants_spawned[random_index] += 1
+            
             random_index = random.randint(0, len(environment.spawn_locations)-1)
             location = environment.spawn_locations[random_index]
             x = location["x"]
@@ -137,7 +150,7 @@ class plantManager():
 
             environment.spawn_locations.pop(random_index)
 
-            temp = plant(environment, self, x, y, size)
+            temp = plant(environment, self, info, x, y, size)
 
             self.last_spawned = 0
             print("Spawned")
@@ -161,17 +174,12 @@ class plantManager():
 #
 
 class plant():
-    def __init__(self, environment, plant_manager, x, y, size=100):
-        plants = [{"name": "Wavy Green", "image": "plant.png", "moisture_rate": 0.1, "moisture_low":50, "moisture_high":80, "sunlight_hours":4, "sunlight_intensity":"low", "temperature_low":15, "temperature_high":25, "humidity_low":75, "humidity_high":90},  # bathroom
-            {"name": "Pointy Tropics", "image": "plant2.png", "moisture_rate": 0.3, "moisture_low":60, "moisture_high":90, "sunlight_hours":8, "sunlight_intensity":"direct", "temperature_low":15, "temperature_high":30, "humidity_low":60, "humidity_high":80}, #garden
-            {"name": "Red Flowers", "image": "plant3.png", "moisture_rate": 0.2, "moisture_low":60, "moisture_high":80, "sunlight_hours":7, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":80}, #window sill
-            {"name": "Angry Goose", "image": "plant4.png", "moisture_rate": 0.2, "moisture_low":30, "moisture_high":90, "sunlight_hours":4, "sunlight_intensity":"low", "temperature_low":10, "temperature_high":20, "humidity_low":60, "humidity_high":70}] # shelf
-
+    def __init__(self, environment, plant_manager, info, x, y, size=100):
         self.environment = environment
         self.plant_manager = plant_manager
         self.plant_manager.plants.append(self)
 
-        self.info = random.choice(plants)   
+        self.info = info  
         self.name = self.info["name"]
 
         self.environment.plants[id(self)] = self
@@ -180,7 +188,6 @@ class plant():
         self.spawn_time = self.environment.frame_manager.game_manager.time
         self.moisture_rate = self.info["moisture_rate"]
         self.sunlight_last_update = 600
-        self.out_of_range = 0
         self.info_displayed = False        
 
         self.moisture_warning = None
@@ -284,10 +291,6 @@ class plant():
         print("water")
         self.soil_moisture = 75
 
-    def die(self):
-        #print("plant deadd")
-        pass
-
     def move_menu_open(self):
         self.close()
         self.info_displayed = True
@@ -352,36 +355,31 @@ class plant():
         self.alert = False
         
         if self.soil_moisture < self.info["moisture_low"] or self.soil_moisture > self.info["moisture_high"]:
-            self.out_of_range += 1
             self.show_info_warning("moisture")        
             self.alert = True
         else:
             self.destroy_info_warning("moisture")
 
         if self.environment.temperature < self.info["temperature_low"] or self.environment.temperature > self.info["temperature_high"]:            
-            self.out_of_range += 1
             self.show_info_warning("temperature")   
             self.alert = True
         else:
             self.destroy_info_warning("temperature")
 
         if self.environment.humidity < self.info["humidity_low"] or self.environment.humidity > self.info["humidity_high"]:            
-            self.out_of_range += 1
             self.show_info_warning("humidity")   
             self.alert = True
         else:
             self.destroy_info_warning("humidity")
 
         if self.environment.sunlight_intensity != self.info["sunlight_intensity"]:
-            self.out_of_range += 1
             self.show_info_warning("sunlight")   
             self.alert = True
         else:
             self.destroy_info_warning("sunlight")
 
         if self.alert == False:
-            self.alert_hide()
-            self.out_of_range = 0   
+            self.alert_hide() 
         else:
             self.alert_show()
 
@@ -393,9 +391,6 @@ class plant():
         except:
             pass
 
-        # if any value are outside range for more then 24 hours, die            
-        if self.out_of_range > 1440:
-            self.die()
 
 # Frame sub class
 class environment():
