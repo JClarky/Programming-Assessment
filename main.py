@@ -96,16 +96,16 @@ class frameManager():
         self.menu = menu(self)
 
         self.bathroom = environment("Bathroom", self, [{"x":250, "y":375, "size":100}, {"x":733, "y":490, "size":200}, {"x":167, "y":545, "size":100}],
-        7,"indirect",random.randint(70,90),random.randint(15,25))
+        5,"low",random.randint(85,89),random.randint(15,25))
 
-        self.garden = environment("Garden", self, [{"x":835, "y":427, "size":100}, {"x":481, "y":352, "size":80}, {"x":322, "y":480, "size":105}, {"x":88, "y":420, "size":105}],
-        7,"indirect",random.randint(70,90),random.randint(15,25))
+        self.garden = environment("Garden", self, [{"x":835, "y":427, "size":100}, {"x":481, "y":352, "size":80}, {"x":322, "y":480, "size":105}, {"x":158, "y":420, "size":105}],
+        9,"direct",random.randint(70,80),random.randint(21,30))
+
+        self.window = environment("Window", self, [{"x":733, "y":504, "size":150}, {"x":539, "y":500, "size":130}, {"x":322, "y":460, "size":130}, {"x":158, "y":430, "size":130}],
+        7,"indirect",random.randint(60,80),random.randint(10,25))
 
         self.shelf = environment("Shelf", self, [{"x":265, "y":300, "size":150}, {"x":415, "y":300, "size":150}, {"x":565, "y":300, "size":150}, {"x":715, "y":300, "size":150}],
-        7,"indirect",random.randint(70,90),random.randint(15,25))
-
-        self.window = environment("Window", self, [{"x":733, "y":504, "size":150}, {"x":539, "y":500, "size":130}, {"x":322, "y":460, "size":130}, {"x":88, "y":430, "size":130}],
-        7,"indirect",random.randint(70,90),random.randint(15,25))
+        4,"low",random.randint(60,70),random.randint(10,20))
 
         self.menu.show()
         self.active_frame = None;
@@ -162,10 +162,10 @@ class plantManager():
 
 class plant():
     def __init__(self, environment, plant_manager, x, y, size=100):
-        plants = [{"name": "plant1", "image": "plant.png", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}, 
-            {"name": "plant2", "image": "plant2.png", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}, 
-            {"name": "plant3", "image": "plant3.png", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90},
-            {"name": "plant3", "image": "plant4.png", "moisture_rate": 0.2, "moisture_low":40, "moisture_high":90, "sunlight_hours":5, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":90}]
+        plants = [{"name": "Wavy Green", "image": "plant.png", "moisture_rate": 0.1, "moisture_low":50, "moisture_high":80, "sunlight_hours":4, "sunlight_intensity":"low", "temperature_low":15, "temperature_high":25, "humidity_low":75, "humidity_high":90},  # bathroom
+            {"name": "Pointy Tropics", "image": "plant2.png", "moisture_rate": 0.3, "moisture_low":60, "moisture_high":90, "sunlight_hours":8, "sunlight_intensity":"direct", "temperature_low":15, "temperature_high":30, "humidity_low":60, "humidity_high":80}, #garden
+            {"name": "Red Flowers", "image": "plant3.png", "moisture_rate": 0.2, "moisture_low":60, "moisture_high":80, "sunlight_hours":7, "sunlight_intensity":"indirect", "temperature_low":10, "temperature_high":25, "humidity_low":60, "humidity_high":80}, #window sill
+            {"name": "Angry Goose", "image": "plant4.png", "moisture_rate": 0.2, "moisture_low":30, "moisture_high":90, "sunlight_hours":4, "sunlight_intensity":"low", "temperature_low":10, "temperature_high":20, "humidity_low":60, "humidity_high":70}] # shelf
 
         self.environment = environment
         self.plant_manager = plant_manager
@@ -173,7 +173,8 @@ class plant():
 
         self.info = random.choice(plants)   
         self.name = self.info["name"]
-        self.environment.plants.append(self)
+
+        self.environment.plants[id(self)] = self
         self.soil_moisture = random.randint(0, 30)
 
         self.spawn_time = self.environment.frame_manager.game_manager.time
@@ -198,8 +199,8 @@ class plant():
 
     def draw(self):        
         self.img = ImageTk.PhotoImage(Image.open('assets/'+self.info["image"]).resize((self.size, self.size), Image.Resampling.LANCZOS))
-        created = self.environment.canvas.create_image(self.x, self.y, image=self.img)
-        self.environment.canvas.tag_bind(created, '<ButtonPress-1>', self.clicked)           
+        self.created = self.environment.canvas.create_image(self.x, self.y, image=self.img)
+        self.environment.canvas.tag_bind(self.created, '<ButtonPress-1>', self.clicked)           
         
     def alert_show(self):
         if self.environment.frame_manager.active_frame == self.environment and self.info_displayed == False:
@@ -232,12 +233,12 @@ class plant():
         self.temperature_text = self.canvas_plant_info.create_text(150, 80, font='Helvetica 8 bold', anchor=NW, text="Temperature " + str(self.environment.temperature)+"°C")
         button(self.canvas_plant_info, text="X", command=self.close, padx=6).place(x=264, y=0)
 
-        self.canvas_plant_info.create_text(5, 45, anchor=NW, text="Recommended\n"+str(self.info["moisture_low"])+"-"+str(self.info["moisture_high"])+"%")
-        self.canvas_plant_info.create_text(150, 45, anchor=NW, text="Recommended\n" + self.info["sunlight_intensity"] + " for " + str(self.info["sunlight_hours"])+" hrs")
-        self.canvas_plant_info.create_text(5, 95, anchor=NW, text="Recommended\n" + str(self.info["humidity_low"])+"-"+str(self.info["humidity_high"])+"%")
-        self.canvas_plant_info.create_text(150, 95, anchor=NW, text="Recommended\n"+ str(self.info["temperature_low"])+"-"+str(self.info["temperature_high"])+"°C")
+        self.canvas_plant_info.create_text(5, 45, anchor=NW, text="Required\n"+str(self.info["moisture_low"])+"-"+str(self.info["moisture_high"])+"%")
+        self.canvas_plant_info.create_text(150, 45, anchor=NW, text="Required\n" + self.info["sunlight_intensity"] + " for " + str(self.info["sunlight_hours"])+" hrs")
+        self.canvas_plant_info.create_text(5, 95, anchor=NW, text="Required\n" + str(self.info["humidity_low"])+"-"+str(self.info["humidity_high"])+"%")
+        self.canvas_plant_info.create_text(150, 95, anchor=NW, text="Required\n"+ str(self.info["temperature_low"])+"-"+str(self.info["temperature_high"])+"°C")
 
-        button(self.canvas_plant_info, text="Move", command=self.move, padx=2).place(x=0, y=130)
+        button(self.canvas_plant_info, text="Move", command=self.move_menu_open, padx=2).place(x=0, y=130)
         button(self.canvas_plant_info, text="Water", command=self.water, padx=2).place(x=45, y=130)
 
     def create_info_warning(self, x, y):
@@ -283,12 +284,61 @@ class plant():
         print("water")
         self.soil_moisture = 75
 
-    def move(self):
-        print("move")
-
     def die(self):
         #print("plant deadd")
         pass
+
+    def move_menu_open(self):
+        self.close()
+        self.info_displayed = True
+        self.canvas_move_menu = Canvas(self.environment.frame_manager.game_manager.frame, width=210, height=60, bg="#262626", relief="ridge", bd=0, highlightthickness=0)
+        self.canvas_move_menu.place(anchor="e", x=self.x+110, y=self.y-32)        
+        self.canvas_move_menu.create_text(5, 0, anchor=NW, text="Move to:", fill="white")
+        button(self.canvas_move_menu, text="X", command=self.move_menu_close, padx=4, pady=0).place(x=188, y=0)
+        button(self.canvas_move_menu, text="Bathroom", command=self.move_bathroom, padx=2).place(x=0, y=30)
+        button(self.canvas_move_menu, text="Garden", command=self.move_garden, padx=2).place(x=65, y=30)
+        button(self.canvas_move_menu, text="Shelf", command=self.move_shelf, padx=2).place(x=115, y=30)
+        button(self.canvas_move_menu, text="Window", command=self.move_window, padx=2).place(x=154, y=30)
+
+    def move_menu_close(self):
+        self.canvas_move_menu.destroy()
+        self.info_displayed = False
+
+    def move_bathroom(self):        
+        self.move(self.plant_manager.game_manager.frame_manager.bathroom)
+
+    def move_garden(self):
+        self.move_menu_close()
+        self.move(self.plant_manager.game_manager.frame_manager.garden)
+
+    def move_shelf(self):
+        self.move_menu_close()
+        self.move(self.plant_manager.game_manager.frame_manager.shelf)
+
+    def move_window(self):
+        self.move_menu_close()
+        self.move(self.plant_manager.game_manager.frame_manager.window)
+
+    def move(self, environment):
+        random_index = random.randint(0, len(environment.spawn_locations)-1)
+        location = environment.spawn_locations[random_index]
+        environment.spawn_locations.pop(random_index)
+        x = location["x"]
+        y = location["y"]
+        size = location["size"]
+        self.move_menu_close()
+
+        self.environment.plants.pop(id(self))
+        self.close()
+        self.environment.canvas.delete(self.created)
+        self.environment = environment
+
+        self.environment.plants[id(self)] = self
+        self.x = x
+        self.y = y
+        self.size = size
+        self.spawn_time = self.environment.frame_manager.game_manager.time
+        
 
     def close(self):
         self.canvas_plant_info.destroy()
@@ -352,7 +402,7 @@ class environment():
     def __init__(self, name, frame_manager, spawn_locations, sunlights_hours, sunlight_intensity, humidity, temperature):
         self.frame_manager = frame_manager
         self.frame = frame_manager.game_manager.frame
-        self.plants = []
+        self.plants = {}
         self.canvas = None
         self.temperature = temperature
         self.humidity = humidity
@@ -375,7 +425,7 @@ class environment():
         bg = self.canvas.create_image(0, 0, anchor=NW, image=img)
         self.nav = navbar(self, self.frame)
 
-        for plant in self.plants:
+        for id, plant in self.plants.items():
             plant.draw()
 
 class button(Button):
@@ -447,10 +497,10 @@ class navbar():
         self.parent_frame.frame_manager.menu.show()
 
     def update(self):
-        if self.frame:
+        try:
             no_alerts = 0
             no_plants = len(self.parent_frame.frame_manager.bathroom.plants)
-            for plant in self.parent_frame.frame_manager.bathroom.plants:
+            for id, plant in self.parent_frame.frame_manager.bathroom.plants.items():
                 if plant.alert:
                     no_alerts += 1
                 
@@ -459,7 +509,7 @@ class navbar():
 
             no_alerts = 0
             no_plants = len(self.parent_frame.frame_manager.garden.plants)
-            for plant in self.parent_frame.frame_manager.garden.plants:
+            for id, plant in self.parent_frame.frame_manager.garden.plants.items():
                 if plant.alert:
                     no_alerts += 1
                 
@@ -468,7 +518,7 @@ class navbar():
 
             no_alerts = 0
             no_plants = len(self.parent_frame.frame_manager.shelf.plants)
-            for plant in self.parent_frame.frame_manager.shelf.plants:
+            for id, plant in self.parent_frame.frame_manager.shelf.plants.items():
                 if plant.alert:
                     no_alerts += 1
                 
@@ -477,12 +527,14 @@ class navbar():
 
             no_alerts = 0
             no_plants = len(self.parent_frame.frame_manager.window.plants)
-            for plant in self.parent_frame.frame_manager.window.plants:
+            for id, plant in self.parent_frame.frame_manager.window.plants.items():
                 if plant.alert:
                     no_alerts += 1
                 
             Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.offset+262, y=30) 
             Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.offset+191, y=30) 
+        except:
+            pass
 
 if __name__ == '__main__':
     GameManager()
