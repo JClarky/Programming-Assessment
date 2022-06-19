@@ -13,11 +13,13 @@ import sys
 #
 
 # The GameManager sets up the game and handles the game loop
+
+
 class GameManager():
     def __init__(self):
         self.run = True
         self.root = Tk()
-        self.time = 700 # Start the game at 7:00
+        self.time = 700  # Start the game at 7:00
         self.height = 600
         self.width = 1000
         self.root.title("EzSoil Game")
@@ -28,8 +30,9 @@ class GameManager():
         self.frame.pack(side="top", expand=True, fill="both")
         self.frame_manager = FrameManager(self)
         self.plant_manager = PlantManager(self)
-        self.plant_manager.spawn(self.frame_manager.bathroom) # Spawn the first plant in the bathroom
-        self.timescale = None # The timescale of the game eg. 10 = 10 minutes per second
+        # Spawn the first plant in the bathroom
+        self.plant_manager.spawn(self.frame_manager.bathroom)
+        self.timescale = None  # The timescale of the game eg. 10 = 10 minutes per second
         self.root.mainloop()
 
     # Destroy the thread and close the window
@@ -47,7 +50,7 @@ class GameManager():
         self.run = True
         Thread(target=self.clock).start()
         self.frame_manager.bathroom.show()
-        
+
     # A function that is launched on a seperate thread and that updates the game
     def clock(self):
         while self.run:
@@ -77,7 +80,7 @@ class GameManager():
             # Update the time on the screen (exceptions used to capture errors when switching environments)
             try:
                 # Delete the old time
-                try: 
+                try:
                     self.frame_manager.active_frame.canvas.delete(
                         self.update_text)
                 except BaseException:
@@ -88,14 +91,17 @@ class GameManager():
             except BaseException:
                 pass
 
-            self.plant_manager.update() 
+            self.plant_manager.update()
 
-            if self.frame_manager.active_frame and self.frame_manager.active_frame != self.frame_manager.menu: # If the active frame is not the menu
-                self.frame_manager.active_frame.nav.update() 
-            
-            time.sleep(1 / self.timescale) # Update the game according to timescale
+            if self.frame_manager.active_frame and self.frame_manager.active_frame != self.frame_manager.menu:  # If the active frame is not the menu
+                self.frame_manager.active_frame.nav.update()
+
+            # Update the game according to timescale
+            time.sleep(1 / self.timescale)
 
 # FrameManager manages the environment and menu frames
+
+
 class FrameManager():
     def __init__(self, game_manager):
         self.game_manager = game_manager
@@ -155,6 +161,8 @@ class FrameManager():
         Instructions(self).show()
 
 # PlantManager spawns and updates plants
+
+
 class PlantManager():
     def __init__(self, game_manager):
         # Types of plants that can be spawned
@@ -165,31 +173,35 @@ class PlantManager():
                              "sunlight_intensity": "indirect", "temperature_low": 10, "temperature_high": 25, "humidity_low": 60, "humidity_high": 80},  # window sill
                             {"name": "Angry Goose", "image": "plant4.png", "moisture_rate": 0.2, "moisture_low": 30, "moisture_high": 90, "sunlight_hours": 4, "sunlight_intensity": "low", "temperature_low": 10, "temperature_high": 20, "humidity_low": 60, "humidity_high": 70}]  # shelf
 
-        self.plants_spawned = [0, 0, 0, 0] # Keeps track of how many plants of each type have been spawned
+        # Keeps track of how many plants of each type have been spawned
+        self.plants_spawned = [0, 0, 0, 0]
         self.game_manager = game_manager
         self.enviros = [
             self.game_manager.frame_manager.bathroom,
             self.game_manager.frame_manager.garden,
             self.game_manager.frame_manager.shelf,
             self.game_manager.frame_manager.window]
-        self.plants = [] # List of all plants
-        self.spawner = False # If plants are being spawned
-        self.last_spawned = 0 # Time since last plant was spawned
+        self.plants = []  # List of all plants
+        self.spawner = False  # If plants are being spawned
+        self.last_spawned = 0  # Time since last plant was spawned
 
     # Spawns a plant at a random location in the environment unless environment is provided
     def spawn(self, environment=None):
         if environment is None:
             environment = random.choice(self.enviros)
-            if environment.max_spawned <= len(environment.plants): # If the environment is full, don't spawn a plant
+            # If the environment is full, don't spawn a plant
+            if environment.max_spawned <= len(environment.plants):
                 return
 
-        if len(environment.spawn_locations) != 0: # If there are spawn locations available at the chosen environment, spawn
+        # If there are spawn locations available at the chosen environment, spawn
+        if len(environment.spawn_locations) != 0:
             # Choose a random plant type
             random_index = random.randint(0, 3)
             if self.plants_spawned[random_index] == 3:
                 return
             info = self.plants_info[random_index]
-            self.plants_spawned[random_index] += 1 # Increment the number of plants of this type that have been spawned
+            # Increment the number of plants of this type that have been spawned
+            self.plants_spawned[random_index] += 1
 
             # Choose a random spawn location
             random_index = random.randint(
@@ -198,23 +210,27 @@ class PlantManager():
             x = location["x"]
             y = location["y"]
             size = location["size"]
-            environment.spawn_locations.pop(random_index) # Remove the spawn location from the list of available spawn locations
+            # Remove the spawn location from the list of available spawn locations
+            environment.spawn_locations.pop(random_index)
 
-            temp = Plant(environment, self, info, x, y, size) # Spawn the plant
+            temp = Plant(environment, self, info, x,
+                         y, size)  # Spawn the plant
 
-            self.last_spawned = 0 # Reset the time since last plant was spawned
+            self.last_spawned = 0  # Reset the time since last plant was spawned
 
-            if environment == self.game_manager.frame_manager.active_frame: # If the plant is being spawned in the active frame, show it
+            # If the plant is being spawned in the active frame, show it
+            if environment == self.game_manager.frame_manager.active_frame:
                 temp.draw()
 
     # Function that updates all plants when called
     def update(self):
         self.last_spawned += 1
-        
-        if self.plants[0].alert is False and len(self.plants) == 1 and self.last_spawned > 10: # If the first plant was tended to correctly, spawn more plants
+
+        # If the first plant was tended to correctly, spawn more plants
+        if self.plants[0].alert is False and len(self.plants) == 1 and self.last_spawned > 10:
             self.spawner = True
 
-        for plant in self.plants: # Update all plants
+        for plant in self.plants:  # Update all plants
             plant.update()
 
         # If it has been more then 60 minutes since the last plant was spawned, spawn a new plant
@@ -226,29 +242,34 @@ class PlantManager():
 #
 
 # Plant class that handles all plant-specific information
+
+
 class Plant():
     def __init__(self, environment, plant_manager, info, x, y, size=100):
         self.environment = environment
         self.plant_manager = plant_manager
-        self.plant_manager.plants.append(self) # Add the plant to the list of all plants
+        # Add the plant to the list of all plants
+        self.plant_manager.plants.append(self)
 
         self.info = info
         self.name = self.info["name"]
 
-        self.environment.plants[id(self)] = self # Add the plant to the list of plants in the environment
-        self.soil_moisture = random.randint(0, 30) # Randomly set the soil moisture
+        # Add the plant to the list of plants in the environment
+        self.environment.plants[id(self)] = self
+        self.soil_moisture = random.randint(
+            0, 30)  # Randomly set the soil moisture
 
         self.spawn_time = self.environment.frame_manager.game_manager.time
         self.moisture_rate = self.info["moisture_rate"]
 
-        self.info_displayed = False # Whether the plant info is being displayed
+        self.info_displayed = False  # Whether the plant info is being displayed
         # Warning indicators in the plant info
         self.moisture_warning = None
         self.sunlight_warning = None
         self.humidity_warning = None
         self.temperature_warning = None
 
-        self.alert = False # Whether the plant is in an alert state
+        self.alert = False  # Whether the plant is in an alert state
         self.alert_canvas = None
 
         self.size = size
@@ -266,12 +287,13 @@ class Plant():
                 Image.Resampling.LANCZOS))
         self.created = self.environment.canvas.create_image(
             self.x, self.y, image=self.img)
-        self.environment.canvas.tag_bind( # Make the plant clickable
+        self.environment.canvas.tag_bind(  # Make the plant clickable
             self.created, '<ButtonPress-1>', self.clicked)
 
     # If the plant is in the alert state, show the alert canvas otherwise hide it
     def alert_show(self):
-        if self.environment.frame_manager.active_frame == self.environment and self.info_displayed is False: # If the plant is in the active frame and the plant info is not be showen, show the alert canvas
+        # If the plant is in the active frame and the plant info is not be showen, show the alert canvas
+        if self.environment.frame_manager.active_frame == self.environment and self.info_displayed is False:
             if self.alert_canvas is None:
                 img = ImageTk.PhotoImage(Image.open(
                     'assets/!.png').resize((25, 25), Image.Resampling.LANCZOS))
@@ -292,14 +314,14 @@ class Plant():
 
     # Hide the alert canvas
     def alert_hide(self):
-        if self.alert_canvas is not None: # If the alert_canvas is actually being displayed, then destroy it
+        if self.alert_canvas is not None:  # If the alert_canvas is actually being displayed, then destroy it
             self.alert_canvas.destroy()
             self.alert_canvas = None
 
     # When the plant has been clicked, display the plant info section
     def clicked(self, event):
-        if not self.info_displayed: # If the plant info is not already being displayed, display it
-            self.info_displayed = True 
+        if not self.info_displayed:  # If the plant info is not already being displayed, display it
+            self.info_displayed = True
             self.canvas_plant_info = Canvas(
                 self.environment.frame_manager.game_manager.frame,
                 width=290,
@@ -340,7 +362,7 @@ class Plant():
                 150, 80, font='Poppins 8 bold', anchor=NW, text="Temperature " + str(
                     self.environment.temperature) + "°C")
             CustomButton(self.canvas_plant_info, text="X",
-                   command=self.close, padx=6).place(x=264, y=0)
+                         command=self.close, padx=6).place(x=264, y=0)
 
             # Draw plant recommendations text
             self.canvas_plant_info.create_text(5, 45, anchor=NW, text="Requires:\n" + str(
@@ -364,13 +386,13 @@ class Plant():
                     self.info["temperature_high"]) + "°C", font="Poppins 8")
 
             CustomButton(self.canvas_plant_info, text="Move",
-                   command=self.move_menu_open, padx=2).place(x=0, y=130)
+                         command=self.move_menu_open, padx=2).place(x=0, y=130)
             CustomButton(self.canvas_plant_info, text="Water",
-                   command=self.water, padx=2).place(x=45, y=130)
+                         command=self.water, padx=2).place(x=45, y=130)
 
     # Function that creates an ! alert icon where specified
     def create_info_warning(self, x, y):
-        try: # Just in case the plant info canvas gets destroyed
+        try:  # Just in case the plant info canvas gets destroyed
             img = ImageTk.PhotoImage(Image.open(
                 'assets/!.png').resize((25, 25), Image.Resampling.LANCZOS))
             temp = Canvas(self.canvas_plant_info, width=25, height=25,
@@ -408,7 +430,7 @@ class Plant():
                 self.temperature_warning = self.create_info_warning(290, 116)
             elif name == "humidity" and self.humidity_warning is None:
                 self.humidity_warning = self.create_info_warning(145, 116)
-        else: # Otherwise destroy all created info warnings
+        else:  # Otherwise destroy all created info warnings
             self.destroy_info_warning("moisture")
             self.destroy_info_warning("sunlight")
             self.destroy_info_warning("temperature")
@@ -420,8 +442,9 @@ class Plant():
 
     # Opens menu that allows the user to move the plant to different environment
     def move_menu_open(self):
-        self.close() # Close the plant info canvas
-        self.info_displayed = True # Still keep the info_displayued flag set to True so that alert info warning is hidden
+        self.close()  # Close the plant info canvas
+        # Still keep the info_displayued flag set to True so that alert info warning is hidden
+        self.info_displayed = True
         self.canvas_move_menu = Canvas(
             self.environment.frame_manager.game_manager.frame,
             width=210,
@@ -436,15 +459,15 @@ class Plant():
 
         # Draw buttons that when clicked, move the plant to the selected environment
         CustomButton(self.canvas_move_menu, text="X",
-               command=self.move_menu_close, padx=4, pady=0).place(x=188, y=0)
+                     command=self.move_menu_close, padx=4, pady=0).place(x=188, y=0)
         CustomButton(self.canvas_move_menu, text="Bathroom",
-               command=self.move_bathroom, padx=2).place(x=0, y=30)
+                     command=self.move_bathroom, padx=2).place(x=0, y=30)
         CustomButton(self.canvas_move_menu, text="Garden",
-               command=self.move_garden, padx=2).place(x=65, y=30)
+                     command=self.move_garden, padx=2).place(x=65, y=30)
         CustomButton(self.canvas_move_menu, text="Shelf",
-               command=self.move_shelf, padx=2).place(x=115, y=30)
+                     command=self.move_shelf, padx=2).place(x=115, y=30)
         CustomButton(self.canvas_move_menu, text="Window",
-               command=self.move_window, padx=2).place(x=154, y=30)
+                     command=self.move_window, padx=2).place(x=154, y=30)
 
     # Destroys move menu canvas
     def move_menu_close(self):
@@ -469,20 +492,23 @@ class Plant():
 
     # Function that moves the plant to a new environment
     def move(self, environment):
-        if environment == self.environment: # Check if the plant is already in the environment
+        if environment == self.environment:  # Check if the plant is already in the environment
             return
 
         # Choose a random spawn location for the plant
-        if len(environment.spawn_locations) == 1: # Check if the environment has only one spawn location as randint will fail if len()-1 = 0
+        # Check if the environment has only one spawn location as randint will fail if len()-1 = 0
+        if len(environment.spawn_locations) == 1:
             random_index = 0
-        elif len(environment.spawn_locations) > 1: #
+        elif len(environment.spawn_locations) > 1:
             random_index = random.randint(
                 0, len(environment.spawn_locations) - 1)
         else:
-            return # No spawn locations, so don't move the plant
+            return  # No spawn locations, so don't move the plant
 
-        location = environment.spawn_locations[random_index] # Get the spawn location
-        environment.spawn_locations.pop(random_index) # Remove the spawn location from the list
+        # Get the spawn location
+        location = environment.spawn_locations[random_index]
+        # Remove the spawn location from the list
+        environment.spawn_locations.pop(random_index)
 
         self.environment.spawn_locations.append(
             {"x": self.x, "y": self.y, "size": self.size})
@@ -491,12 +517,15 @@ class Plant():
         y = location["y"]
         size = location["size"]
         self.move_menu_close()
-        self.environment.plants.pop(id(self)) # Remove the plant from the old environment
+        # Remove the plant from the old environment
+        self.environment.plants.pop(id(self))
         self.close()
-        self.environment.canvas.delete(self.created) # Delete plant drawing from the old environment
-        self.environment = environment # Set new environment
+        # Delete plant drawing from the old environment
+        self.environment.canvas.delete(self.created)
+        self.environment = environment  # Set new environment
 
-        self.environment.plants[id(self)] = self # Add the plant to the new environment
+        # Add the plant to the new environment
+        self.environment.plants[id(self)] = self
         self.x = x
         self.y = y
         self.size = size
@@ -510,10 +539,10 @@ class Plant():
     # Function that updates plant conditions and health
     def update(self):
 
-        if self.soil_moisture > 0: # Make sure the soil moisture does not go below 0, then decrease it by moisture_rate
+        if self.soil_moisture > 0:  # Make sure the soil moisture does not go below 0, then decrease it by moisture_rate
             self.soil_moisture = self.soil_moisture - self.moisture_rate
 
-        self.alert = False # Start health check by setting alert flag to False
+        self.alert = False  # Start health check by setting alert flag to False
 
         # If the soil moisture is out of range, show alert
         if self.soil_moisture < self.info["moisture_low"] or self.soil_moisture > self.info["moisture_high"]:
@@ -583,7 +612,7 @@ class Environment():
             temperature):
         self.frame_manager = frame_manager
         self.frame = frame_manager.game_manager.frame
-        self.plants = {} # Dictionary of plants in the environment
+        self.plants = {}  # Dictionary of plants in the environment
         self.canvas = None
         self.temperature = temperature
         self.humidity = humidity
@@ -591,7 +620,8 @@ class Environment():
         self.sunlight_hours = sunlights_hours
         self.spawn_locations = spawn_locations
         self.name = name
-        self.max_spawned = len(spawn_locations) - 1 # Maximum number of plants that can be spawned in the environment
+        # Maximum number of plants that can be spawned in the environment
+        self.max_spawned = len(spawn_locations) - 1
 
     # Function that draws the environment
     def show(self):
@@ -613,7 +643,7 @@ class Environment():
                 (self.frame_manager.game_manager.width,
                  self.frame_manager.game_manager.height),
                 Image.Resampling.LANCZOS))
-        
+
         self.canvas.background = img
         bg = self.canvas.create_image(0, 0, anchor=NW, image=img)
         self.nav = Navbar(self, self.frame)
@@ -648,6 +678,8 @@ class CustomButton(Button):
         self.pack(padx=15, pady=5)
 
 # Menu class that handles the menu environment and inital setup
+
+
 class Menu():
     def __init__(self, frame_manager):
         self.frame_manager = frame_manager
@@ -658,35 +690,35 @@ class Menu():
     # Check the age of the user and act accordinly
     def set_age(self):
         age = self.age_input.get()
-        try: # Try & accept handles errors caused by invalid age being entered
+        try:  # Try & accept handles errors caused by invalid age being entered
             age = int(age)
-            if 0 <= age < 13: # If the user is too young, only let them exit
+            if 0 <= age < 13:  # If the user is too young, only let them exit
                 self.message.set('You must be 13 or older to play')
                 self.age_input.destroy()
                 self.continue_button.config(
                     text="Exit", command=self.frame_manager.game_manager.destroy)
-            elif 13 <= age < 120: # If the user is within the age range, continue
+            elif 13 <= age < 120:  # If the user is within the age range, continue
                 self.age = age
                 self.show()
-            else: # If the age is invalid make them try again
+            else:  # If the age is invalid make them try again
                 raise ValueError
 
-        except ValueError: # If the age is invalid make them try again
+        except ValueError:  # If the age is invalid make them try again
             self.message.set('Please enter a valid age')
 
     # Check the requested timescale and set it if valid
     def set_timescale(self):
         timescale = self.timescale_input.get()
-        try: # Try & accept handles errors caused by invalid timescale being entered
+        try:  # Try & accept handles errors caused by invalid timescale being entered
             timescale = int(timescale)
-            if 50 < timescale: # If the timescale is too high, display error
+            if 50 < timescale:  # If the timescale is too high, display error
                 self.message.set(
                     'Sorry, but the maximum timescale is 50, the minimum is 10. Try again.\n(10 = 10 minute per second, 15 = 15 minutes per second, no decimals, timescale between 10 and 50)')
-            elif 9 < timescale: # The timescale is correct, continue
+            elif 9 < timescale:  # The timescale is correct, continue
                 self.timescale = timescale
                 self.frame_manager.game_manager.timescale = timescale
                 self.show()
-            else: # If the timescale is invalid, display error
+            else:  # If the timescale is invalid, display error
                 raise ValueError
 
         except ValueError:  # If the timescale is invalid, display error
@@ -715,7 +747,7 @@ class Menu():
         label.pack()
 
         # If the user has not entered their age correctly yet, ask for it
-        if self.age is None: 
+        if self.age is None:
             self.message = StringVar()
             self.message.set('Before playing, enter your age:')
             Label(container, textvariable=self.message,
@@ -740,11 +772,11 @@ class Menu():
         # Display standard menu
         else:
             CustomButton(container, text="Play",
-                   command=self.frame_manager.game_manager.start)
+                         command=self.frame_manager.game_manager.start)
             CustomButton(container, text="Instructions",
-                   command=self.frame_manager.show_instructions)
+                         command=self.frame_manager.show_instructions)
             CustomButton(container, text="Exit",
-                   command=self.frame_manager.game_manager.destroy)
+                         command=self.frame_manager.game_manager.destroy)
 
         # Draw copyright label
         copyright = Label(self.frame, text="Copyright EzSoil 2022",
@@ -753,6 +785,8 @@ class Menu():
             x=20, y=self.frame_manager.game_manager.height - 20, anchor='sw')
 
 # Instructions class that displays the instructions for user to read
+
+
 class Instructions():
     def __init__(self, frame_manager):
         self.frame_manager = frame_manager
@@ -785,7 +819,8 @@ class Instructions():
         t.insert(END, "Welcome to the EzSoil game!\nThe purpose of this game is to show you how Sprout can help monitor plant health.\n\nWhen you play, click on plants to see their health status and requirements. From that menu you can water or move the plants to a better climate. \nOn the top of your screen you will see the different environments (click to go to different environment), including how many plants are at each locations, and how many need tending to. \n\n There is no time limit, and the plants will not die. Tend to the first plant that is spawned to continue.")
         t.config(state=DISABLED)
 
-        CustomButton(container, text="Back", command=self.frame_manager.menu.show)
+        CustomButton(container, text="Back",
+                     command=self.frame_manager.menu.show)
 
         # Draw copyright label
         copyright = Label(
@@ -794,6 +829,8 @@ class Instructions():
             x=20, y=self.frame_manager.game_manager.height - 20, anchor='sw')
 
 # Navbar widget that is used on every environment - displays small menu and aids game navigation
+
+
 class Navbar():
     def __init__(self, parent_frame, frame):
         self.parent_frame = parent_frame
@@ -802,7 +839,8 @@ class Navbar():
         container = Frame(self.frame, background="white")
         container.place(anchor="n")
 
-        self.offset = self.parent_frame.frame_manager.game_manager.width / 2 - 100 # The offset of the navbar from the center of the screen
+        self.offset = self.parent_frame.frame_manager.game_manager.width / \
+            2 - 100  # The offset of the navbar from the center of the screen
 
         # Environment buttons - click them to go to different environments
         CustomButton(
@@ -837,7 +875,7 @@ class Navbar():
             y=15)
 
         # Exit button - click to exit to menu
-        CustomButton(self.frame, text="Exit to Menu", command=self.exit_button).place( 
+        CustomButton(self.frame, text="Exit to Menu", command=self.exit_button).place(
             anchor="e", x=self.parent_frame.frame_manager.game_manager.width, y=15)
 
     # Handles the exit button - exits to the menu
@@ -847,7 +885,7 @@ class Navbar():
 
     # Updates the bubbles on each button with new data
     def update(self):
-        try: # Handles errors due to the navbar not being shown/still being drawn when switching environments
+        try:  # Handles errors due to the navbar not being shown/still being drawn when switching environments
 
             # Bathroom environment alerts and number of plants
             no_alerts = 0
