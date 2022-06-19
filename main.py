@@ -25,7 +25,7 @@ class GameManager():
         self.frame_manager = frameManager(self)      
         self.plant_manager = plantManager(self)
         self.plant_manager.spawn(self.frame_manager.bathroom)
-        self.root.bind('<Motion>', self.motion)
+        #self.root.bind('<Motion>', self.motion)
         self.main_loop()
 
     def motion(self,event):
@@ -76,6 +76,9 @@ class GameManager():
                 pass
 
             self.plant_manager.update()
+
+            if self.frame_manager.active_frame:
+                self.frame_manager.active_frame.nav.update()
             
             if 'normal' != self.root.state():
                 self.destroy()
@@ -89,6 +92,10 @@ class frameManager():
         self.menu = menu(self)
         self.bathroom = environment("Bathroom", self, [{"x":250, "y":375, "size":100}, {"x":733, "y":490, "size":200}, {"x":167, "y":545, "size":100}],
         7,"indirect",random.randint(70,90),random.randint(15,25))
+
+        self.garden = environment("Garden", self, [{"x":835, "y":427, "size":100}, {"x":481, "y":352, "size":80}, {"x":322, "y":480, "size":105}, {"x":88, "y":420, "size":105}],
+        7,"indirect",random.randint(70,90),random.randint(15,25))
+
         self.menu.show()
         self.active_frame = None;
 
@@ -99,7 +106,7 @@ class frameManager():
 class plantManager():
     def __init__(self, game_manager):
         self.game_manager = game_manager 
-        self.enviros = [self.game_manager.frame_manager.bathroom]
+        self.enviros = [self.game_manager.frame_manager.bathroom, self.game_manager.frame_manager.garden]
         self.plants = []
         self.spawner = False
         self.last_spawned = 0
@@ -221,12 +228,13 @@ class plant():
         button(self.canvas_plant_info, text="Water", command=self.water, padx=2).place(x=45, y=130)
 
     def create_info_warning(self, x, y):
-        img = ImageTk.PhotoImage(Image.open('assets/!.png').resize((25, 25), Image.Resampling.LANCZOS))
-        temp = Canvas(self.canvas_plant_info, width=25, height=25, bg="red", bd=0, highlightthickness=0, relief='ridge')
-        temp.background = img 
-        temp.create_image(0, 0, anchor=NW, image=img)
-        temp.place(anchor="e", x=x, y=y) 
-        return(temp)
+        if self.canvas_plant_info:
+            img = ImageTk.PhotoImage(Image.open('assets/!.png').resize((25, 25), Image.Resampling.LANCZOS))
+            temp = Canvas(self.canvas_plant_info, width=25, height=25, bg="red", bd=0, highlightthickness=0, relief='ridge')
+            temp.background = img 
+            temp.create_image(0, 0, anchor=NW, image=img)
+            temp.place(anchor="e", x=x, y=y) 
+            return(temp)
 
     def destroy_info_warning(self, name):
         if name == "moisture" and self.moisture_warning != None:            
@@ -351,7 +359,7 @@ class environment():
         img = ImageTk.PhotoImage(Image.open('assets/'+self.name+'.jpg').resize((self.frame_manager.game_manager.width, self.frame_manager.game_manager.height), Image.Resampling.LANCZOS))
         self.canvas.background = img  # Keep a reference in case this code is put in a function.
         bg = self.canvas.create_image(0, 0, anchor=NW, image=img)
-        navbar(self, self.frame)
+        self.nav = navbar(self, self.frame)
 
         for plant in self.plants:
             plant.draw()
@@ -413,17 +421,36 @@ class navbar():
         container.place(anchor="n")
 
         button(self.frame, text ="Bathroom", command = self.bathroom_button).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width/2, y=15)
+        button(self.frame, text ="Garden", command = self.garden_button).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width/2+90, y=15)
         button(self.frame, text ="Exit to Menu", command = self.menu_button).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width, y=15)
 
     def bathroom_button(self):
         self.parent_frame.frame_manager.bathroom.show()
-        self.parent_frame.frame_manager.game_manager.clock()
+
+    def garden_button(self):
+        self.parent_frame.frame_manager.garden.show()
 
     def menu_button(self):
         self.parent_frame.frame_manager.menu.show()
 
+    def update(self):
+        no_alerts = 0
+        no_plants = len(self.parent_frame.frame_manager.bathroom.plants)
+        for plant in self.parent_frame.frame_manager.bathroom.plants:
+            if plant.alert:
+                no_alerts += 1
+            
+        Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width/2, y=30) 
+        Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width/2-80, y=30) 
+
+        no_alerts = 0
+        no_plants = len(self.parent_frame.frame_manager.garden.plants)
+        for plant in self.parent_frame.frame_manager.garden.plants:
+            if plant.alert:
+                no_alerts += 1
+            
+        Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width/2+90, y=30) 
+        Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width/2+25, y=30) 
+
 if __name__ == '__main__':
     GameManager()
-
-
-print("end")
