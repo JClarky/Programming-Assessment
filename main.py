@@ -25,7 +25,10 @@ class GameManager():
         self.frame_manager = frameManager(self)      
         self.plant_manager = plantManager(self)
         self.plant_manager.spawn(self.frame_manager.bathroom)
+        self.timescale = None
         #self.root.bind('<Motion>', self.motion)
+
+
         self.main_loop()
 
     def motion(self,event):
@@ -87,8 +90,8 @@ class GameManager():
             
             if 'normal' != self.root.state():
                 self.destroy()
-                
-            time.sleep(0.1)
+
+            time.sleep(1/self.timescale)
        
 # Frame manager
 class frameManager():
@@ -456,6 +459,42 @@ class menu():
     def __init__(self, frame_manager):
         self.frame_manager = frame_manager
         self.frame = frame_manager.game_manager.frame
+        self.age = None
+        self.timescale = None
+
+    def set_age(self):
+        age = self.age_input.get()
+        try:
+            age = int(age)
+            if 0 <= age < 13:
+                self.message.set('You must be 13 or older to play')
+                self.age_input.destroy()
+                self.continue_button.config(text="Exit", command=self.frame_manager.game_manager.destroy)
+            elif 13 <= age < 120:
+                self.age = age
+                self.show()
+            else:
+                raise ValueError
+                
+        except ValueError:
+            self.message.set('Please enter a valid age')      
+
+    def set_timescale(self):
+        timescale = self.timescale_input.get()
+        try:
+            timescale = int(timescale)
+            if 50 < timescale:
+                self.message.set('Sorry, but the maximum timescale is 50, the minimum is 10. Try again.\n(10 = 10 minute per second, 15 = 15 minutes per second, no decimals, timescale between 10 and 50)')
+            elif 9 < timescale:
+                self.timescale = timescale
+                self.frame_manager.game_manager.timescale = timescale
+                self.show()
+            else:
+                raise ValueError
+                
+        except ValueError:
+            self.message.set('Please enter a valid timescale\n(10 = 10 minute per second, 15 = 15 minutes per second, no decimals, timescale between 10 and 50)')    
+
 
     def show(self):
         self.frame_manager.clear()
@@ -474,9 +513,26 @@ class menu():
         label.image=logo 
         label.pack()
 
-        button(container, text="Play", command=self.frame_manager.game_manager.start)
-        button(container, text="Instructions", command=self.frame_manager.show_instructions)
-        button(container, text="Exit", command=self.frame_manager.game_manager.destroy)
+        if self.age == None:
+            self.message = StringVar()
+            self.message.set('Before playing, enter your age:')
+            Label(container, textvariable=self.message, font="Poppins 10", bg="white").pack()
+            self.age_input = Entry(container, font="Poppins 10")
+            self.age_input.pack()
+            self.continue_button = button(container, text="Continue",command=self.set_age)
+            self.continue_button.pack()
+        elif self.timescale == None:
+            self.message = StringVar()
+            self.message.set('Please enter your timescale\n(10 = 10 minute per second, 15 = 15 minutes per second, no decimals, timescale between 10 and 50):')
+            Label(container, textvariable=self.message, font="Poppins 10", bg="white").pack()
+            self.timescale_input = Entry(container, font="Poppins 10")
+            self.timescale_input.pack()
+            self.continue_button = button(container, text="Continue",command=self.set_timescale)
+            self.continue_button.pack()
+        else:
+            button(container, text="Play", command=self.frame_manager.game_manager.start)
+            button(container, text="Instructions", command=self.frame_manager.show_instructions)
+            button(container, text="Exit", command=self.frame_manager.game_manager.destroy)
 
         copyright = Label(self.frame, text="Copyright EzSoil 2022", background="white", font="Poppins 8")
         copyright.place(x = 20, y = self.frame_manager.game_manager.height-20, anchor = 'sw')
@@ -503,10 +559,10 @@ class instructions():
         label.image=logo 
         label.pack()
 
-        t = Text(container, background="white", height=12, width=52, wrap=WORD, font="Poppins 8")
+        t = Text(container, background="white", height=14, width=52, wrap=WORD, font="Poppins 8")
         t.pack()
 
-        t.insert(END, "Welcome to the EzSoil game!\nThe purpose of this game is to show you how Sprout can help monitor plant health.\n\nWhen you play, click on plants to see their health status and requirements. From that menu you can water or move the plants to a better climate. \nOn the top of your screen you will see the different environments (click to go to different environment), including how many plants are at each locations, and how many need tending to. \n\n There is no time limit, and the plants will not die.")
+        t.insert(END, "Welcome to the EzSoil game!\nThe purpose of this game is to show you how Sprout can help monitor plant health.\n\nWhen you play, click on plants to see their health status and requirements. From that menu you can water or move the plants to a better climate. \nOn the top of your screen you will see the different environments (click to go to different environment), including how many plants are at each locations, and how many need tending to. \n\n There is no time limit, and the plants will not die. Tend to the first plant that is spawned to continue.")
         t.config(state=DISABLED)
 
         button(container, text="Back", command=self.frame_manager.menu.show)
