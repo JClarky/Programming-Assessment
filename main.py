@@ -25,7 +25,7 @@ class GameManager():
         self.frame_manager = frameManager(self)      
         self.plant_manager = plantManager(self)
         self.plant_manager.spawn(self.frame_manager.bathroom)
-        #self.root.bind('<Motion>', self.motion)
+        self.root.bind('<Motion>', self.motion)
         self.main_loop()
 
     def motion(self,event):
@@ -77,7 +77,7 @@ class GameManager():
 
             self.plant_manager.update()
 
-            if self.frame_manager.active_frame:
+            if self.frame_manager.active_frame and self.frame_manager.active_frame != self.frame_manager.menu:
                 self.frame_manager.active_frame.nav.update()
             
             if 'normal' != self.root.state():
@@ -90,10 +90,17 @@ class frameManager():
     def __init__(self, game_manager):
         self.game_manager = game_manager
         self.menu = menu(self)
+
         self.bathroom = environment("Bathroom", self, [{"x":250, "y":375, "size":100}, {"x":733, "y":490, "size":200}, {"x":167, "y":545, "size":100}],
         7,"indirect",random.randint(70,90),random.randint(15,25))
 
         self.garden = environment("Garden", self, [{"x":835, "y":427, "size":100}, {"x":481, "y":352, "size":80}, {"x":322, "y":480, "size":105}, {"x":88, "y":420, "size":105}],
+        7,"indirect",random.randint(70,90),random.randint(15,25))
+
+        self.shelf = environment("Shelf", self, [{"x":265, "y":300, "size":150}, {"x":415, "y":300, "size":150}, {"x":565, "y":300, "size":150}, {"x":715, "y":300, "size":150}],
+        7,"indirect",random.randint(70,90),random.randint(15,25))
+
+        self.window = environment("Window", self, [{"x":733, "y":504, "size":150}, {"x":539, "y":500, "size":130}, {"x":322, "y":460, "size":130}, {"x":88, "y":430, "size":130}],
         7,"indirect",random.randint(70,90),random.randint(15,25))
 
         self.menu.show()
@@ -106,7 +113,7 @@ class frameManager():
 class plantManager():
     def __init__(self, game_manager):
         self.game_manager = game_manager 
-        self.enviros = [self.game_manager.frame_manager.bathroom, self.game_manager.frame_manager.garden]
+        self.enviros = [self.game_manager.frame_manager.bathroom, self.game_manager.frame_manager.garden, self.game_manager.frame_manager.shelf, self.game_manager.frame_manager.window]
         self.plants = []
         self.spawner = False
         self.last_spawned = 0
@@ -420,18 +427,13 @@ class navbar():
         container = Frame(self.frame, background = "white")
         container.place(anchor="n")
 
-        button(self.frame, text ="Bathroom", command = self.bathroom_button).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width/2, y=15)
-        button(self.frame, text ="Garden", command = self.garden_button).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width/2+90, y=15)
-        button(self.frame, text ="Exit to Menu", command = self.menu_button).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width, y=15)
+        self.offset = self.parent_frame.frame_manager.game_manager.width/2 - 100
 
-    def bathroom_button(self):
-        self.parent_frame.frame_manager.bathroom.show()
-
-    def garden_button(self):
-        self.parent_frame.frame_manager.garden.show()
-
-    def menu_button(self):
-        self.parent_frame.frame_manager.menu.show()
+        button(self.frame, text ="Bathroom", command = self.parent_frame.frame_manager.bathroom.show).place(anchor="e", x=self.offset, y=15)
+        button(self.frame, text ="Garden", command = self.parent_frame.frame_manager.garden.show).place(anchor="e", x=self.offset+90, y=15)
+        button(self.frame, text ="Shelf", command = self.parent_frame.frame_manager.shelf.show).place(anchor="e", x=self.offset+167, y=15)
+        button(self.frame, text ="Window", command = self.parent_frame.frame_manager.window.show).place(anchor="e", x=self.offset+262, y=15)
+        button(self.frame, text ="Exit to Menu", command = self.parent_frame.frame_manager.menu.show).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width, y=15)
 
     def update(self):
         no_alerts = 0
@@ -440,8 +442,8 @@ class navbar():
             if plant.alert:
                 no_alerts += 1
             
-        Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width/2, y=30) 
-        Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width/2-80, y=30) 
+        Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.offset, y=30) 
+        Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.offset-80, y=30) 
 
         no_alerts = 0
         no_plants = len(self.parent_frame.frame_manager.garden.plants)
@@ -449,8 +451,26 @@ class navbar():
             if plant.alert:
                 no_alerts += 1
             
-        Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width/2+90, y=30) 
-        Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.parent_frame.frame_manager.game_manager.width/2+25, y=30) 
+        Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.offset+90, y=30) 
+        Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.offset+25, y=30) 
+
+        no_alerts = 0
+        no_plants = len(self.parent_frame.frame_manager.shelf.plants)
+        for plant in self.parent_frame.frame_manager.shelf.plants:
+            if plant.alert:
+                no_alerts += 1
+            
+        Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.offset+167, y=30) 
+        Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.offset+114, y=30) 
+
+        no_alerts = 0
+        no_plants = len(self.parent_frame.frame_manager.window.plants)
+        for plant in self.parent_frame.frame_manager.window.plants:
+            if plant.alert:
+                no_alerts += 1
+            
+        Label(self.frame, text=str(no_alerts), background="red", padx=5).place(anchor="e", x=self.offset+262, y=30) 
+        Label(self.frame, text=str(no_plants), background="white", padx=5).place(anchor="e", x=self.offset+191, y=30) 
 
 if __name__ == '__main__':
     GameManager()
