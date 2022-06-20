@@ -1,19 +1,29 @@
 # Import required modules
 
 from tkinter import *
-from xmlrpc.client import FastParser
 from PIL import Image, ImageTk
 from threading import Thread
 import time
 import random
 import sys
+import os
+
+# Required for pyinstaller to work as the directory changes
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 #
 # Managers
 #
 
 # The GameManager sets up the game and handles the game loop
-
 
 class GameManager():
     def __init__(self):
@@ -87,7 +97,7 @@ class GameManager():
                     pass
                 # Draw the new time
                 self.update_text = self.frame_manager.active_frame.canvas.create_text(
-                    10, 10, anchor=NW, text=time_formatted, font="Poppins 8")
+                    self.width-50, self.height-40, anchor=NW, text=time_formatted, font="Poppins 8")
             except BaseException:
                 pass
 
@@ -279,9 +289,9 @@ class Plant():
     # Draw this plant onto the environment canvas
     def draw(self):
         self.img = ImageTk.PhotoImage(
-            Image.open(
+            Image.open(resource_path(
                 'assets/' +
-                self.info["image"]).resize(
+                self.info["image"])).resize(
                 (self.size,
                  self.size),
                 Image.Resampling.LANCZOS))
@@ -295,8 +305,8 @@ class Plant():
         # If the plant is in the active frame and the plant info is not be showen, show the alert canvas
         if self.environment.frame_manager.active_frame == self.environment and self.info_displayed is False:
             if self.alert_canvas is None:
-                img = ImageTk.PhotoImage(Image.open(
-                    'assets/!.png').resize((25, 25), Image.Resampling.LANCZOS))
+                img = ImageTk.PhotoImage(Image.open(resource_path(
+                    'assets/!.png')).resize((25, 25), Image.Resampling.LANCZOS))
                 self.alert_canvas = Canvas(
                     self.environment.frame_manager.game_manager.frame,
                     width=25,
@@ -394,7 +404,7 @@ class Plant():
     def create_info_warning(self, x, y):
         try:  # Just in case the plant info canvas gets destroyed
             img = ImageTk.PhotoImage(Image.open(
-                'assets/!.png').resize((25, 25), Image.Resampling.LANCZOS))
+                resource_path('assets/!.png')).resize((25, 25), Image.Resampling.LANCZOS))
             temp = Canvas(self.canvas_plant_info, width=25, height=25,
                           bg="red", bd=0, highlightthickness=0, relief='ridge')
             temp.background = img
@@ -637,9 +647,9 @@ class Environment():
         # Draw background image based on the environment name
         img = ImageTk.PhotoImage(
             Image.open(
-                'assets/' +
+                resource_path('assets/' +
                 self.name +
-                '.jpg').resize(
+                '.jpg')).resize(
                 (self.frame_manager.game_manager.width,
                  self.frame_manager.game_manager.height),
                 Image.Resampling.LANCZOS))
@@ -713,7 +723,7 @@ class Menu():
             timescale = int(timescale)
             if 50 < timescale:  # If the timescale is too high, display error
                 self.message.set(
-                    'Sorry, but the maximum timescale is 50, the minimum is 10. Try again.\n(10 = 10 minute per second, 15 = 15 minutes per second, no decimals, timescale between 10 and 50)')
+                    'Sorry, but the maximum timescale is 50, the minimum is 10. Try again.\n(10 = 10 minutes per second, 15 = 15 minutes per second, no decimals, timescale between 10 and 50)')
             elif 9 < timescale:  # The timescale is correct, continue
                 self.timescale = timescale
                 self.frame_manager.game_manager.timescale = timescale
@@ -723,7 +733,7 @@ class Menu():
 
         except ValueError:  # If the timescale is invalid, display error
             self.message.set(
-                'Please enter a valid timescale\n(10 = 10 minute per second, 15 = 15 minutes per second, no decimals, timescale between 10 and 50)')
+                'Please enter a valid timescale\n(10 = 10 minutes per second, 15 = 15 minutes per second, no decimals, timescale between 10 and 50)')
 
     # Displays the menu
     def show(self):
@@ -738,7 +748,7 @@ class Menu():
                         rely=0.7, height=500, width=800)
 
         # Draw logo inside container
-        image1 = Image.open("assets/logo.png")
+        image1 = Image.open(resource_path("assets/logo.png"))
         pixels_x, pixels_y = tuple([int(0.4 * x) for x in image1.size])
         image1 = image1.resize((pixels_x, pixels_y))
         logo = ImageTk.PhotoImage(image1)
@@ -761,7 +771,7 @@ class Menu():
         elif self.timescale is None:
             self.message = StringVar()
             self.message.set(
-                'Please enter your timescale\n(10 = 10 minute per second, 15 = 15 minutes per second, no decimals, timescale between 10 and 50):')
+                'Please enter your timescale\n(10 = 10 minutes per second, 15 = 15 minutes per second, no decimals, timescale between 10 and 50):')
             Label(container, textvariable=self.message,
                   font="Poppins 10", bg="white").pack()
             self.timescale_input = Entry(container, font="Poppins 10")
@@ -804,7 +814,7 @@ class Instructions():
                         rely=0.6, height=500, width=800)
 
         # Draw logo inside container
-        image1 = Image.open("assets/logo.png")
+        image1 = Image.open(resource_path("assets/logo.png"))
         pixels_x, pixels_y = tuple([int(0.4 * x) for x in image1.size])
         image1 = image1.resize((pixels_x, pixels_y))
         logo = ImageTk.PhotoImage(image1)
@@ -964,6 +974,7 @@ class Navbar():
                 y=30)
         except BaseException:
             pass
+
 
 
 if __name__ == '__main__':
